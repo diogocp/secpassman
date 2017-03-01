@@ -20,17 +20,9 @@ public class Main {
             throw new RuntimeException(e);
         }
 
-        HttpClient httpClient = new HttpClient("localhost", 4567, keyPair);
-        httpClient.register();
-        httpClient.register();
-
         // Round-trip test
-        final byte[] testDomain = "http://test.com/".getBytes();
-        final byte[] testUsername = "johnny_boy".getBytes();
-        final byte[] testPassword = "superSecret123!".getBytes();
-        httpClient.putPassword(testDomain, testUsername, testPassword);
-        final byte[] response = httpClient.getPassword(testDomain, testUsername);
-        LOG.info("\nI: {}\nO: {}", new String(testPassword), new String(response));
+        PasswordManager manager = new PasswordManager(keyPair, new HttpClient("localhost", 4567));
+        manager.setPassword("fenix.tecnico.ulisboa.pt", "ist123456", "superSecret!123");
+        LOG.info("Got password {}", manager.getPassword("fenix.tecnico.ulisboa.pt", "ist123456"));
     }
-
 }
