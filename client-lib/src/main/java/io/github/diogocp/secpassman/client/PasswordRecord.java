@@ -11,11 +11,11 @@ class PasswordRecord implements Serializable {
     private final UUID uuid;
     private final ZonedDateTime date;
 
-    private final String domain;
-    private final String username;
-    private final String password;
+    private final byte[] domain;
+    private final byte[] username;
+    private final byte[] password;
 
-    PasswordRecord(String domain, String username, String password) {
+    PasswordRecord(byte[] domain, byte[] username, byte[] password) {
         uuid = UUID.randomUUID();
         date = ZonedDateTime.now();
 
@@ -24,15 +24,15 @@ class PasswordRecord implements Serializable {
         this.password = password;
     }
 
-    public String getDomain() {
+    public byte[] getDomain() {
         return domain;
     }
 
-    public String getUsername() {
+    public byte[] getUsername() {
         return username;
     }
 
-    public String getPassword() {
+    public byte[] getPassword() {
         return password;
     }
 

@@ -1,8 +1,8 @@
 package io.github.diogocp.secpassman.client;
 
-import java.security.KeyPair;
-import java.security.KeyPairGenerator;
-import java.security.NoSuchAlgorithmException;
+import java.io.IOException;
+import java.security.KeyStore;
+import java.security.KeyStoreException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -11,18 +11,18 @@ public class Main {
     private static final Logger LOG = LoggerFactory.getLogger(Main.class);
 
     public static void main(String[] args) {
-        final KeyPair keyPair;
+        KeyStore keyStore;
         try {
-            KeyPairGenerator kpg = KeyPairGenerator.getInstance("RSA");
-            kpg.initialize(2048);
-            keyPair = kpg.genKeyPair();
-        } catch (NoSuchAlgorithmException e) {
-            throw new RuntimeException(e);
+            keyStore = KeyStoreUtils.loadKeyStore("ClientKeyStore.jks", "ClientKeyPassword123");
+        } catch (KeyStoreException | IOException e) {
+            LOG.error("Error while loading key store", e);
+            return;
         }
 
         // Round-trip test
-        PasswordManager manager = new PasswordManager(keyPair, new HttpClient("localhost", 4567));
-        manager.setPassword("fenix.tecnico.ulisboa.pt", "ist123456", "superSecret!123");
-        LOG.info("Got password {}", manager.getPassword("fenix.tecnico.ulisboa.pt", "ist123456"));
+        PasswordManager manager = new PasswordManager(new HttpClient("localhost", 4567));
+        manager.init(keyStore, "ClientKey", "ClientKeyPassword123");
+        manager.save_password("fenix.tecnico.ulisboa.pt".getBytes(), "ist123456".getBytes(), "superSecret!123".getBytes());
+        LOG.info("Got password {}", new String(manager.retrieve_password("fenix.tecnico.ulisboa.pt".getBytes(), "ist123456".getBytes())));
     }
 }
