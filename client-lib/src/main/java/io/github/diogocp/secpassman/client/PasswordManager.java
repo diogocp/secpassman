@@ -23,7 +23,7 @@ public class PasswordManager implements Closeable {
     private final Signature sha256WithRsa;
     private final Mac hmacSha256;
 
-    PasswordManager(PasswordProvider provider) {
+    public PasswordManager(PasswordProvider provider) {
         this.provider = provider;
 
         try {
