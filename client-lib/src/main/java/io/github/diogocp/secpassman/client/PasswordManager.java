@@ -6,11 +6,12 @@ import java.nio.charset.StandardCharsets;
 import java.security.InvalidKeyException;
 import java.security.KeyPair;
 import java.security.KeyStore;
-import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.Signature;
 import java.security.SignatureException;
 import java.util.Arrays;
+import javax.crypto.Mac;
+import javax.crypto.spec.SecretKeySpec;
 import org.apache.commons.lang3.SerializationUtils;
 
 public class PasswordManager {
@@ -18,15 +19,15 @@ public class PasswordManager {
     private KeyPair keyPair;
     private final PasswordProvider provider;
 
-    private final Signature SHA256withRSA;
-    private final MessageDigest SHA256;
+    private final Signature sha256WithRsa;
+    private final Mac hmacSha256;
 
     PasswordManager(PasswordProvider provider) {
         this.provider = provider;
 
         try {
-            SHA256withRSA = Signature.getInstance("SHA256withRSA");
-            SHA256 = MessageDigest.getInstance("SHA-256");
+            sha256WithRsa = Signature.getInstance("SHA256withRSA");
+            hmacSha256 = Mac.getInstance("HmacSHA256");
         } catch (NoSuchAlgorithmException e) {
             // Every implementation of the Java platform is required to
             // support these algorithms
@@ -47,9 +48,8 @@ public class PasswordManager {
     }
 
     public byte[] retrieve_password(byte[] domain, byte[] username) {
-        byte[] recordIdentifier = generateRecordIdentifier(domain, username);
-
-        byte[] serializedRecord = provider.getPassword(keyPair, recordIdentifier, recordIdentifier);
+        byte[] serializedRecord = provider.getPassword(keyPair, getHmac(domain, "domain"),
+                getHmac(username, "username"));
 
         if (serializedRecord == null) {
             throw new IllegalArgumentException("Password record not found");
@@ -88,40 +88,39 @@ public class PasswordManager {
 
         byte[] serializedRecord = SerializationUtils.serialize(sealedRecord);
 
-        byte[] recordIdentifier = generateRecordIdentifier(domain, username);
-
-        provider.putPassword(keyPair, recordIdentifier, recordIdentifier, serializedRecord);
+        provider.putPassword(keyPair, getHmac(domain, "domain"), getHmac(username, "username"),
+                serializedRecord);
     }
 
     public void close() {
         //TODO not sure if we need anything here
     }
 
-    private byte[] generateRecordIdentifier(byte[] domain, byte[] username) {
-        byte[] recordId;
+    private byte[] getHmac(byte[] message, String context) {
+        final byte[] messageToSign;
 
         try (final ByteArrayOutputStream bos = new ByteArrayOutputStream()) {
-            bos.write("secpassman record identifier".getBytes(StandardCharsets.US_ASCII));
-            bos.write("\0domain: ".getBytes(StandardCharsets.US_ASCII));
-            bos.write(domain);
-            bos.write("\0username: ".getBytes(StandardCharsets.US_ASCII));
-            bos.write(username);
-
-            recordId = bos.toByteArray();
+            // We use a context label to provide domain separation
+            final String ctxLabel = String.format("secpassman record for %s: ", context);
+            bos.write(ctxLabel.getBytes(StandardCharsets.US_ASCII));
+            bos.write(message);
+            messageToSign = bos.toByteArray();
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
 
         try {
-            SHA256withRSA.initSign(keyPair.getPrivate());
-            SHA256withRSA.update(recordId);
+            // Sign the message
+            sha256WithRsa.initSign(keyPair.getPrivate());
+            sha256WithRsa.update(messageToSign);
+            final byte[] signature = sha256WithRsa.sign();
 
-            SHA256.update(recordId);
-            SHA256.update(SHA256withRSA.sign());
+            // Use the message signature as the HMAC key
+            hmacSha256.init(new SecretKeySpec(signature, "HmacSHA256"));
         } catch (InvalidKeyException | SignatureException e) {
             throw new RuntimeException(e);
         }
 
-        return SHA256.digest();
+        return hmacSha256.doFinal(messageToSign);
     }
 }
