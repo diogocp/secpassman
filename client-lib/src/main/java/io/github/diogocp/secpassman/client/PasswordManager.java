@@ -1,6 +1,7 @@
 package io.github.diogocp.secpassman.client;
 
 import java.io.ByteArrayOutputStream;
+import java.io.Closeable;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.security.InvalidKeyException;
@@ -14,7 +15,7 @@ import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
 import org.apache.commons.lang3.SerializationUtils;
 
-public class PasswordManager {
+public class PasswordManager implements Closeable {
 
     private KeyPair keyPair;
     private final PasswordProvider provider;

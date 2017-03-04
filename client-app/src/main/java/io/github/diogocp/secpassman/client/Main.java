@@ -54,34 +54,32 @@ public class Main {
             return;
         }
 
-        // Client API initialization
-        PasswordManager manager = new PasswordManager(new HttpClient("localhost", 4567));
-        manager.init(keyStore, "client", "jkspass");
+        try (PasswordManager manager = new PasswordManager(new HttpClient("localhost", 4567))) {
+            // Client API initialization
+            manager.init(keyStore, "client", "jkspass");
 
-        // Execute the user's command
-        if ("register".equals(cli.getParsedCommand())) {
-            manager.register_user();
-            return;
-        }
+            // Execute the user's command
+            if ("register".equals(cli.getParsedCommand())) {
+                manager.register_user();
 
-        // If the command is not 'register', it must be 'add' or 'get',
-        // so parse the domain and username
-        final byte[] domain = cmdAddGet.getDomain().getBytes(StandardCharsets.UTF_8);
-        final byte[] username = cmdAddGet.getUsername().getBytes(StandardCharsets.UTF_8);
+            } else if ("add".equals(cli.getParsedCommand())) {
+                final byte[] domain = cmdAddGet.getDomain().getBytes(StandardCharsets.UTF_8);
+                final byte[] username = cmdAddGet.getUsername().getBytes(StandardCharsets.UTF_8);
+                final char[] password = System.console().readPassword("Password: ");
 
-        if ("add".equals(cli.getParsedCommand())) {
-            char[] password = System.console().readPassword("Please enter the password: ");
-            manager.save_password(domain, username,
-                    new String(password).getBytes(StandardCharsets.UTF_8));
-            return;
-        }
+                manager.save_password(domain, username,
+                        new String(password).getBytes(StandardCharsets.UTF_8));
 
-        if ("get".equals(cli.getParsedCommand())) {
-            try {
-                byte[] password = manager.retrieve_password(domain, username);
-                System.out.println(new String(password));
-            } catch (Exception e) {
-                LOG.error("Error getting password", e);
+            } else if ("get".equals(cli.getParsedCommand())) {
+                final byte[] domain = cmdAddGet.getDomain().getBytes(StandardCharsets.UTF_8);
+                final byte[] username = cmdAddGet.getUsername().getBytes(StandardCharsets.UTF_8);
+
+                try {
+                    byte[] password = manager.retrieve_password(domain, username);
+                    System.out.println(new String(password));
+                } catch (Exception e) {
+                    LOG.error("Error getting password", e);
+                }
             }
         }
     }
