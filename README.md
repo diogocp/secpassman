@@ -7,7 +7,7 @@ Server
 ------
 
 ```sh
-./gradlew :run:server
+./gradlew :server:run
 ```
 
 The server listens on port 4567.
