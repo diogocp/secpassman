@@ -40,8 +40,6 @@ public class PasswordManager {
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
-
-        provider.register(keyPair);
     }
 
     public void register_user() {
