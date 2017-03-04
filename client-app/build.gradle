@@ -7,5 +7,6 @@ mainClassName = "io.github.diogocp.secpassman.client.Main"
 
 dependencies {
     compile project(':client-lib')
+    compile group: 'com.beust', name: 'jcommander', version: '1.60'
     compile group: 'org.slf4j', name: 'slf4j-simple', version: '1.7.24'
 }
