@@ -28,6 +28,11 @@ public class Main {
 
         try {
             cli.parse(args);
+
+            if (cmdMain.isHelp()) {
+                cli.usage();
+                return;
+            }
             if (cli.getParsedCommand() == null) {
                 throw new ParameterException("Please specify a command");
             }
@@ -36,11 +41,6 @@ public class Main {
             }
         } catch (ParameterException ex) {
             System.err.println(ex.getMessage());
-            cli.usage();
-            return;
-        }
-
-        if (cmdMain.isHelp()) {
             cli.usage();
             return;
         }
