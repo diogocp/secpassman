@@ -1,17 +1,21 @@
 package io.github.diogocp.secpassman.client;
 
-import com.google.common.io.BaseEncoding;
 import com.mashape.unirest.http.HttpResponse;
 import com.mashape.unirest.http.Unirest;
 import com.mashape.unirest.http.exceptions.UnirestException;
+import java.io.IOException;
+import java.io.InputStream;
 import java.net.URI;
 import java.security.KeyPair;
+import java.util.Base64;
+import java.util.Base64.Encoder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 class HttpClient implements PasswordProvider {
 
     private static final Logger LOG = LoggerFactory.getLogger(HttpClient.class);
+    private static final Encoder base64Url = Base64.getUrlEncoder().withoutPadding();
 
     private final URI serverUrl;
 
@@ -25,7 +29,7 @@ class HttpClient implements PasswordProvider {
         HttpResponse res;
         try {
             res = Unirest.post(serverUrl.resolve("register").toString())
-                    .queryString("clientKey", BaseEncoding.base16().encode(clientKey))
+                    .queryString("clientKey", base64Url.encodeToString(clientKey))
                     .asString();
         } catch (UnirestException e) {
             //TODO
@@ -41,9 +45,9 @@ class HttpClient implements PasswordProvider {
         HttpResponse res;
         try {
             res = Unirest.get(serverUrl.resolve("password").toString())
-                    .queryString("clientKey", BaseEncoding.base16().encode(clientKey))
-                    .queryString("domain", BaseEncoding.base16().encode(domain))
-                    .queryString("username", BaseEncoding.base16().encode(username))
+                    .queryString("clientKey", base64Url.encodeToString(clientKey))
+                    .queryString("domain", base64Url.encodeToString(domain))
+                    .queryString("username", base64Url.encodeToString(username))
                     .asString();
         } catch (UnirestException e) {
             //TODO
@@ -52,7 +56,13 @@ class HttpClient implements PasswordProvider {
 
         LOG.info("Get password status: {} {}", res.getStatus(), res.getStatusText());
         if (res.getStatus() == 200) {
-            return BaseEncoding.base16().decode(res.getBody().toString());
+            try (InputStream is = res.getRawBody()) {
+                final byte[] password = new byte[is.available()];
+                is.read(password);
+                return password;
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
         } else {
             // TODO record not found
             return null;
@@ -65,10 +75,10 @@ class HttpClient implements PasswordProvider {
         HttpResponse res;
         try {
             res = Unirest.put(serverUrl.resolve("password").toString())
-                    .queryString("clientKey", BaseEncoding.base16().encode(clientKey))
-                    .queryString("domain", BaseEncoding.base16().encode(domain))
-                    .queryString("username", BaseEncoding.base16().encode(username))
-                    .queryString("password", BaseEncoding.base16().encode(password))
+                    .queryString("clientKey", base64Url.encodeToString(clientKey))
+                    .queryString("domain", base64Url.encodeToString(domain))
+                    .queryString("username", base64Url.encodeToString(username))
+                    .body(password)
                     .asString();
         } catch (UnirestException e) {
             //TODO

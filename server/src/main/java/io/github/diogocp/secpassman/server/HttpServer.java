@@ -3,8 +3,8 @@ package io.github.diogocp.secpassman.server;
 import static spark.Spark.*;
 
 import com.google.common.base.Throwables;
-import com.google.common.io.BaseEncoding;
 import java.security.PublicKey;
+import java.util.Base64;
 
 public class HttpServer {
 
@@ -16,7 +16,7 @@ public class HttpServer {
             byte[] keyBytes;
 
             try {
-                keyBytes = BaseEncoding.base16().decode(req.queryParams("clientKey"));
+                keyBytes = Base64.getUrlDecoder().decode(req.queryParams("clientKey"));
             } catch (IllegalArgumentException | NullPointerException e) {
                 res.status(400);
                 return "Bad Request";
@@ -45,9 +45,9 @@ public class HttpServer {
             byte[] username;
 
             try {
-                keyBytes = BaseEncoding.base16().decode(req.queryParams("clientKey"));
-                domain = BaseEncoding.base16().decode(req.queryParams("domain"));
-                username = BaseEncoding.base16().decode(req.queryParams("username"));
+                keyBytes = Base64.getUrlDecoder().decode(req.queryParams("clientKey"));
+                domain = Base64.getUrlDecoder().decode(req.queryParams("domain"));
+                username = Base64.getUrlDecoder().decode(req.queryParams("username"));
             } catch (IllegalArgumentException | NullPointerException e) {
                 res.status(400);
                 return "Bad Request";
@@ -55,11 +55,7 @@ public class HttpServer {
 
             PublicKey clientKey = Utils.parsePublicKey(keyBytes);
             try {
-                byte[] password = passwordServer.get(clientKey, domain, username);
-                if (password == null) {
-                    return "null";
-                }
-                return BaseEncoding.base16().encode(password);
+                return passwordServer.get(clientKey, domain, username);
             } catch (Exception e) {
                 res.status(500);
                 return Throwables.getStackTraceAsString(e);
@@ -74,14 +70,15 @@ public class HttpServer {
             byte[] password;
 
             try {
-                keyBytes = BaseEncoding.base16().decode(req.queryParams("clientKey"));
-                domain = BaseEncoding.base16().decode(req.queryParams("domain"));
-                username = BaseEncoding.base16().decode(req.queryParams("username"));
-                password = BaseEncoding.base16().decode(req.queryParams("password"));
+                keyBytes = Base64.getUrlDecoder().decode(req.queryParams("clientKey"));
+                domain = Base64.getUrlDecoder().decode(req.queryParams("domain"));
+                username = Base64.getUrlDecoder().decode(req.queryParams("username"));
             } catch (IllegalArgumentException | NullPointerException e) {
                 res.status(400);
                 return "Bad Request";
             }
+
+            password = req.bodyAsBytes();
 
             PublicKey clientKey = Utils.parsePublicKey(keyBytes);
 
