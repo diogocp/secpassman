@@ -3,29 +3,37 @@ package io.github.diogocp.secpassman.server;
 import static spark.Spark.*;
 
 import com.google.common.base.Throwables;
+import java.security.KeyFactory;
+import java.security.NoSuchAlgorithmException;
 import java.security.PublicKey;
+import java.security.spec.InvalidKeySpecException;
+import java.security.spec.X509EncodedKeySpec;
 import java.util.Base64;
+import java.util.HashMap;
+import java.util.Map;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import spark.Request;
 
 public class HttpServer {
+
+    private static Logger LOG = LoggerFactory.getLogger(HttpServer.class);
 
     public static void main(String[] args) {
         final PasswordServer passwordServer = new PasswordServer();
 
         post("/register", (req, res) -> {
+            LOG.info("Got a register request");
 
-            byte[] keyBytes;
+            final PublicKey clientKey;
 
             try {
-                keyBytes = Base64.getUrlDecoder().decode(req.queryParams("clientKey"));
-            } catch (IllegalArgumentException | NullPointerException e) {
+                final Map<String, byte[]> params = decodeQueryParams(req);
+                clientKey = parsePublicKey(params.get("clientKey"));
+            } catch (IllegalArgumentException | NullPointerException | InvalidKeySpecException e) {
+                LOG.warn("Bad request", e);
                 res.status(400);
-                return "Bad Request";
-            }
-
-            PublicKey clientKey = Utils.parsePublicKey(keyBytes);
-            if (clientKey == null) {
-                res.status(500);
-                return "Error parsing clientKey.";
+                return "Bad Request\r\n\r\n" + e.getMessage();
             }
 
             try {
@@ -39,23 +47,11 @@ public class HttpServer {
         });
 
         get("/password", (req, res) -> {
-
-            byte[] keyBytes;
-            byte[] domain;
-            byte[] username;
+            final Map<String, byte[]> params = decodeQueryParams(req);
+            final PublicKey clientKey = parsePublicKey(params.get("clientKey"));
 
             try {
-                keyBytes = Base64.getUrlDecoder().decode(req.queryParams("clientKey"));
-                domain = Base64.getUrlDecoder().decode(req.queryParams("domain"));
-                username = Base64.getUrlDecoder().decode(req.queryParams("username"));
-            } catch (IllegalArgumentException | NullPointerException e) {
-                res.status(400);
-                return "Bad Request";
-            }
-
-            PublicKey clientKey = Utils.parsePublicKey(keyBytes);
-            try {
-                return passwordServer.get(clientKey, domain, username);
+                return passwordServer.get(clientKey, params.get("domain"), params.get("username"));
             } catch (Exception e) {
                 res.status(500);
                 return Throwables.getStackTraceAsString(e);
@@ -63,32 +59,37 @@ public class HttpServer {
         });
 
         put("/password", (req, res) -> {
-
-            byte[] keyBytes;
-            byte[] domain;
-            byte[] username;
-            byte[] password;
+            final Map<String, byte[]> params = decodeQueryParams(req);
+            params.put("password", req.bodyAsBytes());
+            final PublicKey clientKey = parsePublicKey(params.get("clientKey"));
 
             try {
-                keyBytes = Base64.getUrlDecoder().decode(req.queryParams("clientKey"));
-                domain = Base64.getUrlDecoder().decode(req.queryParams("domain"));
-                username = Base64.getUrlDecoder().decode(req.queryParams("username"));
-            } catch (IllegalArgumentException | NullPointerException e) {
-                res.status(400);
-                return "Bad Request";
-            }
-
-            password = req.bodyAsBytes();
-
-            PublicKey clientKey = Utils.parsePublicKey(keyBytes);
-
-            try {
-                passwordServer.put(clientKey, domain, username, password);
+                passwordServer.put(clientKey, params.get("domain"), params.get("username"),
+                        params.get("password"));
                 return "Stored password";
             } catch (Exception e) {
                 res.status(500);
                 return Throwables.getStackTraceAsString(e);
             }
         });
+    }
+
+    private static Map<String, byte[]> decodeQueryParams(Request req) {
+        final Map<String, byte[]> params = new HashMap<>();
+        for (Map.Entry<String, String[]> p : req.queryMap().toMap().entrySet()) {
+            params.put(p.getKey(), Base64.getUrlDecoder().decode(p.getValue()[0]));
+        }
+        return params;
+    }
+
+    static PublicKey parsePublicKey(byte[] keyBytes) throws InvalidKeySpecException {
+        try {
+            final X509EncodedKeySpec spec = new X509EncodedKeySpec(keyBytes);
+            return KeyFactory.getInstance("RSA").generatePublic(spec);
+        } catch (NoSuchAlgorithmException e) {
+            // Every implementation of the Java platform is required to
+            // support the RSA KeyFactory algorithm.
+            throw new RuntimeException(e);
+        }
     }
 }
