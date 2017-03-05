@@ -1,5 +1,6 @@
 package io.github.diogocp.secpassman.client;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.Serializable;
 import java.security.InvalidKeyException;
@@ -10,13 +11,13 @@ import java.security.PublicKey;
 import java.security.Signature;
 import java.security.SignatureException;
 import java.security.SignedObject;
-import java.security.interfaces.RSAPublicKey;
 import javax.crypto.Cipher;
 import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.KeyGenerator;
 import javax.crypto.NoSuchPaddingException;
 import javax.crypto.SealedObject;
 import javax.crypto.SecretKey;
+import org.apache.commons.io.serialization.ValidatingObjectInputStream;
 
 class SignedSealedObject<T extends Serializable> implements Serializable {
 
@@ -152,6 +153,22 @@ class SignedSealedObject<T extends Serializable> implements Serializable {
             // Every implementation of the Java platform is required to
             // support the RSA/ECB/OAEPWithSHA-256AndMGF1Padding cipher
             // and 128-bit AES keys.
+            throw new RuntimeException(e);
+        }
+    }
+
+    static SignedSealedObject safeDeserialize(byte[] object)
+            throws IOException {
+        final ByteArrayInputStream is = new ByteArrayInputStream(object);
+        final ValidatingObjectInputStream vis = new ValidatingObjectInputStream(is);
+
+        vis.accept(SignedSealedObject.class, SignedObject.class);
+        vis.accept("[B"); // byte primitive type
+
+        try {
+            return (SignedSealedObject) vis.readObject();
+        } catch (ClassNotFoundException e) {
+            // Impossible!
             throw new RuntimeException(e);
         }
     }

@@ -56,8 +56,13 @@ public class PasswordManager implements Closeable {
             throw new IllegalArgumentException("Password record not found");
         }
 
-        SignedSealedObject<PasswordRecord> signedSealedRecord =
-                SerializationUtils.deserialize(serializedRecord);
+        SignedSealedObject<PasswordRecord> signedSealedRecord;
+        try {
+            signedSealedRecord = SignedSealedObject.safeDeserialize(serializedRecord);
+        } catch (IOException e) {
+            // TODO tried to deserialize wrong class?
+            throw new RuntimeException(e);
+        }
 
         try {
             PasswordRecord record = signedSealedRecord.getObject(keyPair);
