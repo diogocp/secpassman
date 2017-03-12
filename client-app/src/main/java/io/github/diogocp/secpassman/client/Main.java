@@ -5,6 +5,7 @@ import com.beust.jcommander.ParameterException;
 import io.github.diogocp.secpassman.client.cli.CommandAddGet;
 import io.github.diogocp.secpassman.client.cli.CommandMain;
 import io.github.diogocp.secpassman.client.cli.CommandRegister;
+import io.github.diogocp.secpassman.common.KeyStoreUtils;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.security.KeyStore;

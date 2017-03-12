@@ -1,5 +1,6 @@
 rootProject.name = 'secpassman'
 
+include 'common'
 include 'server'
 include 'client-lib'
 include 'client-app'

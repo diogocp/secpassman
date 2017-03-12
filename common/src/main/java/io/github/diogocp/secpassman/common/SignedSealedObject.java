@@ -1,4 +1,4 @@
-package io.github.diogocp.secpassman.client;
+package io.github.diogocp.secpassman.common;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -19,13 +19,13 @@ import javax.crypto.SealedObject;
 import javax.crypto.SecretKey;
 import org.apache.commons.io.serialization.ValidatingObjectInputStream;
 
-class SignedSealedObject<T extends Serializable> implements Serializable {
+public class SignedSealedObject<T extends Serializable> implements Serializable {
 
     private static final long serialVersionUID = 666L;
 
     private final SignedObject signedObject;
 
-    SignedSealedObject(T object, KeyPair keyPair)
+    public SignedSealedObject(T object, KeyPair keyPair)
             throws InvalidKeyException, IOException {
 
         if (!keyPair.getPublic().getAlgorithm().equals("RSA")) {
@@ -67,7 +67,7 @@ class SignedSealedObject<T extends Serializable> implements Serializable {
         }
     }
 
-    T getObject(KeyPair keyPair)
+    public T getObject(KeyPair keyPair)
             throws InvalidKeyException, SignatureException, IOException, ClassNotFoundException {
 
         if (!verify(keyPair.getPublic())) {
@@ -157,7 +157,7 @@ class SignedSealedObject<T extends Serializable> implements Serializable {
         }
     }
 
-    static SignedSealedObject safeDeserialize(byte[] object)
+    public static SignedSealedObject safeDeserialize(byte[] object)
             throws IOException {
         final ByteArrayInputStream is = new ByteArrayInputStream(object);
         final ValidatingObjectInputStream vis = new ValidatingObjectInputStream(is);

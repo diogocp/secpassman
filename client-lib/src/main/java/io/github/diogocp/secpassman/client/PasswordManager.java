@@ -1,5 +1,8 @@
 package io.github.diogocp.secpassman.client;
 
+import io.github.diogocp.secpassman.common.KeyStoreUtils;
+import io.github.diogocp.secpassman.common.PasswordRecord;
+import io.github.diogocp.secpassman.common.SignedSealedObject;
 import java.io.ByteArrayOutputStream;
 import java.io.Closeable;
 import java.io.IOException;

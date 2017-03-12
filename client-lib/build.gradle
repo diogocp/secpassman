@@ -3,9 +3,9 @@ plugins {
 }
 
 dependencies {
+    api project(':common')
     implementation group: 'com.google.guava', name: 'guava', version: '21.0'
     implementation group: 'com.mashape.unirest', name: 'unirest-java', version: '1.4.9'
-    implementation group: 'commons-io', name: 'commons-io', version: '2.5'
     implementation group: 'org.apache.commons', name: 'commons-lang3', version: '3.5'
     implementation group: 'org.slf4j', name: 'slf4j-simple', version: '1.7.24'
 }

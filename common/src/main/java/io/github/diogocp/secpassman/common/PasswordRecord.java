@@ -1,10 +1,10 @@
-package io.github.diogocp.secpassman.client;
+package io.github.diogocp.secpassman.common;
 
 import java.io.Serializable;
 import java.time.ZonedDateTime;
 import java.util.UUID;
 
-class PasswordRecord implements Serializable {
+public class PasswordRecord implements Serializable {
 
     private static final long serialVersionUID = 666L;
 
@@ -15,7 +15,7 @@ class PasswordRecord implements Serializable {
     private final byte[] username;
     private final byte[] password;
 
-    PasswordRecord(byte[] domain, byte[] username, byte[] password) {
+    public PasswordRecord(byte[] domain, byte[] username, byte[] password) {
         uuid = UUID.randomUUID();
         date = ZonedDateTime.now();
 

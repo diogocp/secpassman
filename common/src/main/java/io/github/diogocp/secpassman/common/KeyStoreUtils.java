@@ -1,16 +1,16 @@
-package io.github.diogocp.secpassman.client;
+package io.github.diogocp.secpassman.common;
 
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.security.*;
 import java.security.cert.*;
 
-class KeyStoreUtils {
+public class KeyStoreUtils {
     private KeyStoreUtils() {
         throw new UnsupportedOperationException("This class cannot be instantiated");
     }
 
-    static KeyStore loadKeyStore(String filename, String password)
+    public static KeyStore loadKeyStore(String filename, String password)
             throws KeyStoreException, IOException {
 
         KeyStore keyStore = KeyStore.getInstance(KeyStore.getDefaultType());
@@ -24,7 +24,7 @@ class KeyStoreUtils {
         return keyStore;
     }
 
-    static KeyPair loadKeyPair(KeyStore keyStore, String keyAlias, String password)
+    public static KeyPair loadKeyPair(KeyStore keyStore, String keyAlias, String password)
             throws KeyStoreException, NoSuchAlgorithmException, UnrecoverableKeyException, InvalidKeyException {
 
         Key key = keyStore.getKey(keyAlias, password.toCharArray());
