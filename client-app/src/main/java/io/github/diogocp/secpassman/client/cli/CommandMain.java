@@ -9,7 +9,7 @@ public class CommandMain {
     @Parameter(names={"--keystore", "-k"}, description = "Path to the Java KeyStore (JKS) file")
     private String keyStore="secpassman.jks";
 
-    @Parameter(names={"--password", "-p"}, description = "Java KeyStore (JKS) file password")
+    @Parameter(names={"--password", "-p"}, description = "Java KeyStore (JKS) file password", hidden = true)
     private String keystorePassword="jkspass";
 
     public boolean isHelp() {
