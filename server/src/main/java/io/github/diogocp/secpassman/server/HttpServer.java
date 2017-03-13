@@ -1,22 +1,13 @@
 package io.github.diogocp.secpassman.server;
 
-import static spark.Spark.*;
-
 import com.google.common.base.Throwables;
+import io.github.diogocp.secpassman.common.messages.GetMessage;
 import io.github.diogocp.secpassman.common.messages.Message;
 import io.github.diogocp.secpassman.common.messages.PutMessage;
 import io.github.diogocp.secpassman.common.messages.RegisterMessage;
-import java.security.KeyFactory;
-import java.security.NoSuchAlgorithmException;
-import java.security.PublicKey;
-import java.security.spec.InvalidKeySpecException;
-import java.security.spec.X509EncodedKeySpec;
-import java.util.Base64;
-import java.util.HashMap;
-import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import spark.Request;
+import spark.Spark;
 
 public class HttpServer {
 
@@ -25,7 +16,7 @@ public class HttpServer {
     public static void main(String[] args) {
         final PasswordServer passwordServer = new PasswordServer();
 
-        post("/secpassman", (req, res) -> {
+        Spark.post("/secpassman", (req, res) -> {
             LOG.info("Got a request");
 
             Message message = Message.deserializeSignedMessage(req.bodyAsBytes());
@@ -36,6 +27,7 @@ public class HttpServer {
 
                 try {
                     passwordServer.register(message.publicKey);
+                    return "OK";
                 } catch (IllegalArgumentException e) {
                     res.status(409);
                     return e.getMessage();
@@ -48,40 +40,22 @@ public class HttpServer {
                         ((PutMessage) message).domain,
                         ((PutMessage) message).username,
                         ((PutMessage) message).password);
+                return "OK";
+            } else if (message instanceof GetMessage) {
+                LOG.info("Handling get request");
+
+                try {
+                    return passwordServer.get(
+                            ((GetMessage) message).publicKey,
+                            ((GetMessage) message).domain,
+                            ((GetMessage) message).username);
+                } catch (Exception e) {
+                    res.status(500);
+                    return Throwables.getStackTraceAsString(e);
+                }
+            } else {
+                return "Not implemented";
             }
-
-            return "OK";
         });
-
-        get("/password", (req, res) -> {
-            final Map<String, byte[]> params = decodeQueryParams(req);
-            final PublicKey clientKey = parsePublicKey(params.get("clientKey"));
-
-            try {
-                return passwordServer.get(clientKey, params.get("domain"), params.get("username"));
-            } catch (Exception e) {
-                res.status(500);
-                return Throwables.getStackTraceAsString(e);
-            }
-        });
-    }
-
-    private static Map<String, byte[]> decodeQueryParams(Request req) {
-        final Map<String, byte[]> params = new HashMap<>();
-        for (Map.Entry<String, String[]> p : req.queryMap().toMap().entrySet()) {
-            params.put(p.getKey(), Base64.getUrlDecoder().decode(p.getValue()[0]));
-        }
-        return params;
-    }
-
-    static PublicKey parsePublicKey(byte[] keyBytes) throws InvalidKeySpecException {
-        try {
-            final X509EncodedKeySpec spec = new X509EncodedKeySpec(keyBytes);
-            return KeyFactory.getInstance("RSA").generatePublic(spec);
-        } catch (NoSuchAlgorithmException e) {
-            // Every implementation of the Java platform is required to
-            // support the RSA KeyFactory algorithm.
-            throw new RuntimeException(e);
-        }
     }
 }

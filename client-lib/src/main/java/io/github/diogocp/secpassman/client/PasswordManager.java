@@ -3,6 +3,7 @@ package io.github.diogocp.secpassman.client;
 import io.github.diogocp.secpassman.common.KeyStoreUtils;
 import io.github.diogocp.secpassman.common.PasswordRecord;
 import io.github.diogocp.secpassman.common.SignedSealedObject;
+import io.github.diogocp.secpassman.common.messages.GetMessage;
 import io.github.diogocp.secpassman.common.messages.PutMessage;
 import io.github.diogocp.secpassman.common.messages.RegisterMessage;
 import java.io.ByteArrayOutputStream;
@@ -63,9 +64,12 @@ public class PasswordManager implements Closeable {
         provider.sendSignedMessage(signedMessage);
     }
 
-    public byte[] retrieve_password(byte[] domain, byte[] username) {
-        byte[] serializedRecord = provider.getPassword(keyPair, getHmac(domain, "domain"),
+    public byte[] retrieve_password(byte[] domain, byte[] username)
+            throws IOException, InvalidKeyException, SignatureException {
+        final GetMessage message = new GetMessage(keyPair.getPublic(), getHmac(domain, "domain"),
                 getHmac(username, "username"));
+
+        byte[] serializedRecord = provider.sendSignedMessage(message.sign(keyPair.getPrivate()));
 
         if (serializedRecord == null) {
             throw new IllegalArgumentException("Password record not found");

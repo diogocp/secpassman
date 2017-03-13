@@ -4,8 +4,8 @@ import java.security.PublicKey;
 
 public class GetMessage extends Message {
 
-    private final byte[] domain;
-    private final byte[] username;
+    public final byte[] domain;
+    public final byte[] username;
 
     public GetMessage(PublicKey publicKey, byte[] domain, byte[] username) {
         super(publicKey);
