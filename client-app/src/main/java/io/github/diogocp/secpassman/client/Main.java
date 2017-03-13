@@ -57,7 +57,7 @@ public class Main {
             return;
         }
 
-        try (PasswordManager manager = new PasswordManager(new HttpClient("localhost", 4567))) {
+        try (PasswordManager manager = new PasswordManager("localhost", 4567)) {
             // Client API initialization
             manager.init(keyStore, "client", "jkspass");
 

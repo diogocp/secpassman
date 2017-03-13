@@ -25,13 +25,13 @@ import org.apache.commons.lang3.SerializationUtils;
 public class PasswordManager implements Closeable {
 
     private KeyPair keyPair;
-    private final PasswordProvider provider;
+    private final HttpClient httpClient;
 
     private final Signature sha256WithRsa;
     private final Mac hmacSha256;
 
-    public PasswordManager(PasswordProvider provider) {
-        this.provider = provider;
+    public PasswordManager(String host, int port) {
+        this.httpClient = new HttpClient(host, port);
 
         try {
             sha256WithRsa = Signature.getInstance("SHA256withRSA");
@@ -61,7 +61,7 @@ public class PasswordManager implements Closeable {
             throw new RuntimeException(e);
         }
 
-        provider.sendSignedMessage(signedMessage);
+        httpClient.sendSignedMessage(signedMessage);
     }
 
     public byte[] retrieve_password(byte[] domain, byte[] username)
@@ -69,7 +69,7 @@ public class PasswordManager implements Closeable {
         final GetMessage message = new GetMessage(keyPair.getPublic(), getHmac(domain, "domain"),
                 getHmac(username, "username"));
 
-        byte[] serializedRecord = provider.sendSignedMessage(message.sign(keyPair.getPrivate()));
+        byte[] serializedRecord = httpClient.sendSignedMessage(message.sign(keyPair.getPrivate()));
 
         if (serializedRecord == null) {
             throw new IllegalArgumentException("Password record not found");
@@ -116,7 +116,7 @@ public class PasswordManager implements Closeable {
         final PutMessage message = new PutMessage(keyPair.getPublic(), getHmac(domain, "domain"),
                 getHmac(username, "username"), SerializationUtils.serialize(sealedRecord));
 
-        provider.sendSignedMessage(message.sign(keyPair.getPrivate()));
+        httpClient.sendSignedMessage(message.sign(keyPair.getPrivate()));
     }
 
     public void close() {

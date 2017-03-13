@@ -10,7 +10,7 @@ import org.apache.commons.lang3.SerializationUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-class HttpClient implements PasswordProvider {
+class HttpClient {
 
     private static final Logger LOG = LoggerFactory.getLogger(HttpClient.class);
 
