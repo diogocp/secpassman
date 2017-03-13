@@ -8,6 +8,7 @@ import io.github.diogocp.secpassman.client.cli.CommandRegister;
 import io.github.diogocp.secpassman.common.KeyStoreUtils;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.security.InvalidKeyException;
 import java.security.KeyStore;
 import java.security.KeyStoreException;
 import org.slf4j.Logger;
@@ -82,6 +83,8 @@ public class Main {
                     LOG.error("Error getting password", e);
                 }
             }
+        } catch (IOException | InvalidKeyException e) {
+            throw new RuntimeException(e);
         }
     }
 }

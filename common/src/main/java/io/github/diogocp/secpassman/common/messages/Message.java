@@ -1,5 +1,6 @@
 package io.github.diogocp.secpassman.common.messages;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.Serializable;
 import java.security.InvalidKeyException;
@@ -11,12 +12,13 @@ import java.security.SignatureException;
 import java.security.SignedObject;
 import java.time.ZonedDateTime;
 import java.util.UUID;
+import org.apache.commons.io.serialization.ValidatingObjectInputStream;
 
 public class Message implements Serializable {
 
-    private final UUID uuid;
-    private final ZonedDateTime date;
-    private final PublicKey publicKey;
+    public final UUID uuid;
+    public final ZonedDateTime date;
+    public final PublicKey publicKey;
 
     protected Message(PublicKey publicKey) {
         uuid = UUID.randomUUID();
@@ -40,8 +42,8 @@ public class Message implements Serializable {
         return new SignedObject(this, privateKey, signingEngine);
     }
 
-    private static Message verify(SignedObject signedMessage, PublicKey verificationKey)
-            throws InvalidKeyException, SignatureException, IOException, ClassNotFoundException {
+    public static boolean verify(SignedObject signedMessage, PublicKey verificationKey)
+            throws InvalidKeyException, SignatureException {
         // The signing engine used to verify the object
         Signature verificationEngine;
         try {
@@ -52,15 +54,39 @@ public class Message implements Serializable {
             throw new RuntimeException(e);
         }
 
-        if (signedMessage.verify(verificationKey, verificationEngine)) {
-            Object message = signedMessage.getObject();
-            if (message instanceof Message) {
-                return (Message) message;
-            } else {
-                throw new ClassNotFoundException("Invalid message");
-            }
-        } else {
-            throw new SignatureException("Message signature verification failed");
+        return signedMessage.verify(verificationKey, verificationEngine);
+    }
+
+    public static Message getObject(SignedObject signedMessage)
+            throws ClassNotFoundException, IOException, SignatureException {
+        final Object obj = signedMessage.getObject();
+
+        if (!(obj instanceof Message)) {
+            throw new ClassNotFoundException("Invalid message");
         }
+
+        try {
+            final Message message = (Message) obj;
+            if (verify(signedMessage, message.publicKey)) {
+                return message;
+            } else {
+                throw new SignatureException("Message signature verification failed");
+            }
+        } catch (InvalidKeyException e) {
+            throw new SignatureException("Message signature verification failed", e);
+        }
+    }
+
+    public static Message deserializeSignedMessage(byte[] message)
+            throws IOException, ClassNotFoundException, SignatureException {
+        final ByteArrayInputStream is = new ByteArrayInputStream(message);
+        final ValidatingObjectInputStream vis = new ValidatingObjectInputStream(is);
+
+        vis.accept(SignedObject.class);
+        vis.accept("[B"); // byte primitive type
+
+        final SignedObject signedObject = (SignedObject) vis.readObject();
+
+        return Message.getObject(signedObject);
     }
 }

@@ -7,8 +7,10 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
 import java.security.KeyPair;
+import java.security.SignedObject;
 import java.util.Base64;
 import java.util.Base64.Encoder;
+import org.apache.commons.lang3.SerializationUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -23,20 +25,17 @@ class HttpClient implements PasswordProvider {
         serverUrl = URI.create(String.format("http://%s:%d/", host, port));
     }
 
-    public void register(KeyPair keyPair) {
-        byte[] clientKey = keyPair.getPublic().getEncoded();
-
-        HttpResponse res;
+    public void sendSignedMessage(SignedObject message) throws IOException {
+        HttpResponse response;
         try {
-            res = Unirest.post(serverUrl.resolve("register").toString())
-                    .queryString("clientKey", base64Url.encodeToString(clientKey))
+            response = Unirest.post(serverUrl.resolve("secpassman").toString())
+                    .body(SerializationUtils.serialize(message))
                     .asString();
         } catch (UnirestException e) {
-            //TODO
-            throw new RuntimeException(e);
+            throw new IOException(e);
         }
 
-        LOG.info("Registration status: {} {}", res.getStatus(), res.getStatusText());
+        LOG.info("sendSignedMessage status: {} {}", response.getStatus(), response.getStatusText());
     }
 
     public byte[] getPassword(KeyPair keyPair, byte[] domain, byte[] username) {

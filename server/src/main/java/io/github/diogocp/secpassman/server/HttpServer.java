@@ -3,6 +3,8 @@ package io.github.diogocp.secpassman.server;
 import static spark.Spark.*;
 
 import com.google.common.base.Throwables;
+import io.github.diogocp.secpassman.common.messages.Message;
+import io.github.diogocp.secpassman.common.messages.RegisterMessage;
 import java.security.KeyFactory;
 import java.security.NoSuchAlgorithmException;
 import java.security.PublicKey;
@@ -22,25 +24,18 @@ public class HttpServer {
     public static void main(String[] args) {
         final PasswordServer passwordServer = new PasswordServer();
 
-        post("/register", (req, res) -> {
-            LOG.info("Got a register request");
+        post("/secpassman", (req, res) -> {
+            LOG.info("Got a request");
 
-            final PublicKey clientKey;
+            Message message = Message.deserializeSignedMessage(req.bodyAsBytes());
 
-            try {
-                final Map<String, byte[]> params = decodeQueryParams(req);
-                clientKey = parsePublicKey(params.get("clientKey"));
-            } catch (IllegalArgumentException | NullPointerException | InvalidKeySpecException e) {
-                LOG.warn("Bad request", e);
-                res.status(400);
-                return "Bad Request\r\n\r\n" + e.getMessage();
-            }
-
-            try {
-                passwordServer.register(clientKey);
-            } catch (IllegalArgumentException e) {
-                res.status(409);
-                return e.getMessage();
+            if (message instanceof RegisterMessage) {
+                try {
+                    passwordServer.register(message.publicKey);
+                } catch (IllegalArgumentException e) {
+                    res.status(409);
+                    return e.getMessage();
+                }
             }
 
             return "OK";

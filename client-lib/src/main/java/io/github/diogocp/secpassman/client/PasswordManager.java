@@ -3,6 +3,7 @@ package io.github.diogocp.secpassman.client;
 import io.github.diogocp.secpassman.common.KeyStoreUtils;
 import io.github.diogocp.secpassman.common.PasswordRecord;
 import io.github.diogocp.secpassman.common.SignedSealedObject;
+import io.github.diogocp.secpassman.common.messages.RegisterMessage;
 import java.io.ByteArrayOutputStream;
 import java.io.Closeable;
 import java.io.IOException;
@@ -13,6 +14,7 @@ import java.security.KeyStore;
 import java.security.NoSuchAlgorithmException;
 import java.security.Signature;
 import java.security.SignatureException;
+import java.security.SignedObject;
 import java.util.Arrays;
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
@@ -47,8 +49,17 @@ public class PasswordManager implements Closeable {
         }
     }
 
-    public void register_user() {
-        provider.register(keyPair);
+    public void register_user() throws InvalidKeyException, IOException {
+        RegisterMessage message = new RegisterMessage(keyPair.getPublic());
+
+        SignedObject signedMessage;
+        try {
+            signedMessage = message.sign(keyPair.getPrivate());
+        } catch (SignatureException e) {
+            throw new RuntimeException(e);
+        }
+
+        provider.sendSignedMessage(signedMessage);
     }
 
     public byte[] retrieve_password(byte[] domain, byte[] username) {
