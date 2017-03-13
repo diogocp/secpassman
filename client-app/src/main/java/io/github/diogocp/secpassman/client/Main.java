@@ -51,7 +51,14 @@ public class Main {
         // Load the key store
         KeyStore keyStore;
         try {
-            keyStore = KeyStoreUtils.loadKeyStore(cmdMain.getKeyStore(), "jkspass");
+            if(!"secpassman.jks".equals(cmdMain.getKeyStore()))
+            //ask for password
+            {
+                final char[] keystorePassword = System.console().readPassword("Keystore Password: ");
+                cmdMain.setPassword(new String(keystorePassword));
+            }
+
+            keyStore = KeyStoreUtils.loadKeyStore(cmdMain.getKeyStore(), cmdMain.getKeystorePassword());
         } catch (KeyStoreException | IOException e) {
             LOG.error("Error while loading key store", e);
             return;
@@ -59,11 +66,13 @@ public class Main {
 
         try (PasswordManager manager = new PasswordManager("localhost", 4567)) {
             // Client API initialization
-            manager.init(keyStore, "client", "jkspass");
+
+            manager.init(keyStore, "client",cmdMain.getKeystorePassword());
 
             // Execute the user's command
             if ("register".equals(cli.getParsedCommand())) {
                 manager.register_user();
+
 
             } else if ("add".equals(cli.getParsedCommand())) {
                 final byte[] domain = cmdAddGet.getDomain().getBytes(StandardCharsets.UTF_8);
