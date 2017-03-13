@@ -4,6 +4,7 @@ import static spark.Spark.*;
 
 import com.google.common.base.Throwables;
 import io.github.diogocp.secpassman.common.messages.Message;
+import io.github.diogocp.secpassman.common.messages.PutMessage;
 import io.github.diogocp.secpassman.common.messages.RegisterMessage;
 import java.security.KeyFactory;
 import java.security.NoSuchAlgorithmException;
@@ -28,14 +29,25 @@ public class HttpServer {
             LOG.info("Got a request");
 
             Message message = Message.deserializeSignedMessage(req.bodyAsBytes());
+            LOG.debug("Message verification success");
 
             if (message instanceof RegisterMessage) {
+                LOG.info("Handling register request");
+
                 try {
                     passwordServer.register(message.publicKey);
                 } catch (IllegalArgumentException e) {
                     res.status(409);
                     return e.getMessage();
                 }
+            } else if (message instanceof PutMessage) {
+                LOG.info("Handling put request");
+
+                passwordServer.put(
+                        ((PutMessage) message).publicKey,
+                        ((PutMessage) message).domain,
+                        ((PutMessage) message).username,
+                        ((PutMessage) message).password);
             }
 
             return "OK";
@@ -47,21 +59,6 @@ public class HttpServer {
 
             try {
                 return passwordServer.get(clientKey, params.get("domain"), params.get("username"));
-            } catch (Exception e) {
-                res.status(500);
-                return Throwables.getStackTraceAsString(e);
-            }
-        });
-
-        put("/password", (req, res) -> {
-            final Map<String, byte[]> params = decodeQueryParams(req);
-            params.put("password", req.bodyAsBytes());
-            final PublicKey clientKey = parsePublicKey(params.get("clientKey"));
-
-            try {
-                passwordServer.put(clientKey, params.get("domain"), params.get("username"),
-                        params.get("password"));
-                return "Stored password";
             } catch (Exception e) {
                 res.status(500);
                 return Throwables.getStackTraceAsString(e);

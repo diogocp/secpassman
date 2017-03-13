@@ -11,6 +11,7 @@ import java.nio.charset.StandardCharsets;
 import java.security.InvalidKeyException;
 import java.security.KeyStore;
 import java.security.KeyStoreException;
+import java.security.SignatureException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -83,7 +84,7 @@ public class Main {
                     LOG.error("Error getting password", e);
                 }
             }
-        } catch (IOException | InvalidKeyException e) {
+        } catch (IOException | InvalidKeyException | SignatureException e) {
             throw new RuntimeException(e);
         }
     }

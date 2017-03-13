@@ -9,6 +9,4 @@ interface PasswordProvider {
     void sendSignedMessage(SignedObject message) throws IOException;
 
     byte[] getPassword(KeyPair keyPair, byte[] domain, byte[] username);
-
-    void putPassword(KeyPair keyPair, byte[] domain, byte[] username, byte[] password);
 }

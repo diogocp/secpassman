@@ -3,6 +3,7 @@ package io.github.diogocp.secpassman.client;
 import io.github.diogocp.secpassman.common.KeyStoreUtils;
 import io.github.diogocp.secpassman.common.PasswordRecord;
 import io.github.diogocp.secpassman.common.SignedSealedObject;
+import io.github.diogocp.secpassman.common.messages.PutMessage;
 import io.github.diogocp.secpassman.common.messages.RegisterMessage;
 import java.io.ByteArrayOutputStream;
 import java.io.Closeable;
@@ -96,7 +97,9 @@ public class PasswordManager implements Closeable {
         }
     }
 
-    public void save_password(byte[] domain, byte[] username, byte[] password) {
+    public void save_password(byte[] domain, byte[] username, byte[] password)
+            throws InvalidKeyException, IOException, SignatureException {
+
         PasswordRecord newRecord = new PasswordRecord(domain, username, password);
         SignedSealedObject<PasswordRecord> sealedRecord;
 
@@ -106,10 +109,10 @@ public class PasswordManager implements Closeable {
             throw new RuntimeException("Failed to encrypt password record", e);
         }
 
-        byte[] serializedRecord = SerializationUtils.serialize(sealedRecord);
+        final PutMessage message = new PutMessage(keyPair.getPublic(), getHmac(domain, "domain"),
+                getHmac(username, "username"), SerializationUtils.serialize(sealedRecord));
 
-        provider.putPassword(keyPair, getHmac(domain, "domain"), getHmac(username, "username"),
-                serializedRecord);
+        provider.sendSignedMessage(message.sign(keyPair.getPrivate()));
     }
 
     public void close() {

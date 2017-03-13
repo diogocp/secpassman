@@ -67,23 +67,4 @@ class HttpClient implements PasswordProvider {
             return null;
         }
     }
-
-    public void putPassword(KeyPair keyPair, byte[] domain, byte[] username, byte[] password) {
-        byte[] clientKey = keyPair.getPublic().getEncoded();
-
-        HttpResponse res;
-        try {
-            res = Unirest.put(serverUrl.resolve("password").toString())
-                    .queryString("clientKey", base64Url.encodeToString(clientKey))
-                    .queryString("domain", base64Url.encodeToString(domain))
-                    .queryString("username", base64Url.encodeToString(username))
-                    .body(password)
-                    .asString();
-        } catch (UnirestException e) {
-            //TODO
-            throw new RuntimeException(e);
-        }
-
-        LOG.info("Put password status: {} {}", res.getStatus(), res.getStatusText());
-    }
 }
