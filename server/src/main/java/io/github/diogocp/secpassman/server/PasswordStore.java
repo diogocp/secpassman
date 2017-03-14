@@ -2,26 +2,29 @@ package io.github.diogocp.secpassman.server;
 
 import com.google.common.collect.HashBasedTable;
 import com.google.common.collect.Table;
-import java.security.Key;
+import java.security.PublicKey;
+import java.util.Base64;
 
 class PasswordStore {
 
-    private Key owner;
-    private long version;
-    private Table<String, String, String> store;
+    private static final Base64.Encoder base64 = Base64.getEncoder();
 
-    PasswordStore(Key publicKey) {
-        owner = publicKey;
+    private PublicKey publicKey;
+    private long version;
+    private Table<String, String, byte[]> store;
+
+    PasswordStore(PublicKey publicKey) {
+        this.publicKey = publicKey;
         version = 1;
         store = HashBasedTable.create();
     }
 
-    String get(String domain, String username) {
-        return store.get(domain, username);
+    byte[] get(byte[] domain, byte[] username) {
+        return store.get(base64.encodeToString(domain), base64.encodeToString(username));
     }
 
-    void put(String domain, String username, String password) {
-        store.put(domain, username, password);
+    void put(byte[] domain, byte[] username, byte[] password) {
+        store.put(base64.encodeToString(domain), base64.encodeToString(username), password);
         version++;
     }
 }
