@@ -5,7 +5,7 @@ import com.google.common.collect.Table;
 import java.security.PublicKey;
 import java.util.Base64;
 
-class PasswordStore {
+class PasswordStore implements java.io.Serializable {
 
     private static final Base64.Encoder base64 = Base64.getEncoder();
 
