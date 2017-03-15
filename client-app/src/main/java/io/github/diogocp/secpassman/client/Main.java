@@ -5,6 +5,7 @@ import com.beust.jcommander.ParameterException;
 import io.github.diogocp.secpassman.client.cli.CommandAddGet;
 import io.github.diogocp.secpassman.client.cli.CommandMain;
 import io.github.diogocp.secpassman.client.cli.CommandRegister;
+import io.github.diogocp.secpassman.common.Config;
 import io.github.diogocp.secpassman.common.KeyStoreUtils;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -24,6 +25,7 @@ public class Main {
         CommandMain cmdMain = new CommandMain();
         CommandAddGet cmdAddGet = new CommandAddGet();
         JCommander cli = new JCommander(cmdMain);
+        Config config = new Config();
 
         cli.addCommand("register", new CommandRegister());
         cli.addCommand("add", cmdAddGet);
@@ -60,11 +62,18 @@ public class Main {
 
             keyStore = KeyStoreUtils.loadKeyStore(cmdMain.getKeyStore(), cmdMain.getKeystorePassword());
         } catch (KeyStoreException | IOException e) {
-            LOG.error("Error while loading key store", e);
+            LOG.error("Error while loading keystore", e);
             return;
         }
 
-        try (PasswordManager manager = new PasswordManager("localhost", 4567)) {
+        try{
+            config.getPropertyValues();
+        }
+        catch(Exception e){
+            LOG.error("Error while loading the properties file");
+        }
+
+        try (PasswordManager manager = new PasswordManager(config.getHost(), Integer.parseInt(config.getPort()))) {
             // Client API initialization
 
             manager.init(keyStore, "client",cmdMain.getKeystorePassword());

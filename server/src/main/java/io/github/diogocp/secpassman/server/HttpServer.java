@@ -5,6 +5,7 @@ import io.github.diogocp.secpassman.common.messages.GetMessage;
 import io.github.diogocp.secpassman.common.messages.Message;
 import io.github.diogocp.secpassman.common.messages.PutMessage;
 import io.github.diogocp.secpassman.common.messages.RegisterMessage;
+import io.github.diogocp.secpassman.common.Config;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import spark.Spark;
@@ -15,6 +16,11 @@ public class HttpServer {
 
     public static void main(String[] args) {
         final PasswordServer passwordServer = new PasswordServer();
+        Config config = new Config();
+        String ip = config.getHost();
+        int port = Integer.parseInt(config.getPort());
+        Spark.ipAddress(ip);
+        Spark.port(port);
 
         Spark.post("/secpassman", (req, res) -> {
             LOG.info("Got a request");
