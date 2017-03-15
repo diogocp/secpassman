@@ -3,11 +3,10 @@ plugins {
     id 'application'
 }
 
-mainClassName = "io.github.diogocp.secpassman.server.HttpServer"
+mainClassName = "io.github.diogocp.secpassman.server.Main"
 
 dependencies {
     compile project(':common')
     compile group: 'com.google.guava', name: 'guava', version: '21.0'
-    compile group: 'com.sparkjava', name: 'spark-core', version: '2.5.5'
     compile group: 'org.slf4j', name: 'slf4j-simple', version: '1.7.24'
 }
