@@ -11,11 +11,12 @@ public class Main {
         final ServerApi serverApi = new ServerApi();
 
         final Config config = new Config();
+        final String ip = config.getHost();
         final int port = Integer.parseInt(config.getPort());
 
         HttpServer server;
         try {
-            server = HttpServer.create(new InetSocketAddress(port), 0);
+            server = HttpServer.create(new InetSocketAddress(ip, port), 0);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }

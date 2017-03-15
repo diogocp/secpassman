@@ -32,10 +32,11 @@ class ServerApi {
     }
 
     // Data persistence stuff
+    @SuppressWarnings("unchecked")
     ServerApi() {
         //Load the file
         try (FileInputStream file = new FileInputStream("data.ser");
-                ObjectInputStream in = new ObjectInputStream(file)) {
+             ObjectInputStream in = new ObjectInputStream(file)) {
             users = (Map) in.readObject();
         } catch (IOException | ClassNotFoundException e) {
             System.err.println("Unable to load file");
@@ -44,7 +45,7 @@ class ServerApi {
 
     private void saveFile() {
         try (FileOutputStream file = new FileOutputStream("data.ser");
-                ObjectOutputStream out = new ObjectOutputStream(file)) {
+             ObjectOutputStream out = new ObjectOutputStream(file)) {
             out.writeObject(users);
         } catch (IOException e) {
             throw new RuntimeException("An error occurred while trying to create the file.", e);

@@ -26,12 +26,10 @@ public class Config {
         try {
 
             input = getClass().getClassLoader().getResourceAsStream(filename);
-           // input = new FileInputStream(path);
 
             // load a properties file
             prop.load(input);
 
-            // get the property value and print it out
             host = prop.getProperty("host");
             port = prop.getProperty("port");
 
