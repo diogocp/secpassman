@@ -1,12 +1,15 @@
 package io.github.diogocp.secpassman.server;
 
+import java.security.KeyPair;
 import java.security.PublicKey;
 
 class ServerApi {
 
+    public final KeyPair keyPair;
     private final DataStore dataStore;
 
-    ServerApi(DataStore dataStore) {
+    ServerApi(KeyPair keyPair, DataStore dataStore) {
+        this.keyPair = keyPair;
         this.dataStore = dataStore;
     }
 

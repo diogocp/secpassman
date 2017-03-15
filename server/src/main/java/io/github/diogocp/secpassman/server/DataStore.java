@@ -44,6 +44,10 @@ class DataStore {
         this.saveFile();
     }
 
+    User getUser(PublicKey publicKey) {
+        return users.get(publicKey);
+    }
+
     void putPassword(PublicKey publicKey, byte[] domain, byte[] username, byte[] password) {
         users.get(publicKey).putPassword(domain, username, password);
         this.saveFile();

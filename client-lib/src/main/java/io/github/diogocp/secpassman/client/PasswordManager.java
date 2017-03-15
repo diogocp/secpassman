@@ -3,7 +3,10 @@ package io.github.diogocp.secpassman.client;
 import io.github.diogocp.secpassman.common.KeyStoreUtils;
 import io.github.diogocp.secpassman.common.PasswordRecord;
 import io.github.diogocp.secpassman.common.SignedSealedObject;
+import io.github.diogocp.secpassman.common.messages.AuthReplyMessage;
+import io.github.diogocp.secpassman.common.messages.AuthRequestMessage;
 import io.github.diogocp.secpassman.common.messages.GetMessage;
+import io.github.diogocp.secpassman.common.messages.Message;
 import io.github.diogocp.secpassman.common.messages.PutMessage;
 import io.github.diogocp.secpassman.common.messages.RegisterMessage;
 import java.io.ByteArrayOutputStream;
@@ -18,6 +21,7 @@ import java.security.Signature;
 import java.security.SignatureException;
 import java.security.SignedObject;
 import java.util.Arrays;
+import java.util.UUID;
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
 import org.apache.commons.lang3.SerializationUtils;
@@ -65,9 +69,12 @@ public class PasswordManager implements Closeable {
     }
 
     public byte[] retrieve_password(byte[] domain, byte[] username)
-            throws IOException, InvalidKeyException, SignatureException {
+            throws IOException, InvalidKeyException, SignatureException, ClassNotFoundException {
         final GetMessage message = new GetMessage(keyPair.getPublic(), getHmac(domain, "domain"),
                 getHmac(username, "username"));
+
+        // Get an auth token for this message, to prevent replay attacks
+        message.authToken = getAuthToken(message.uuid);
 
         byte[] serializedRecord = httpClient.sendSignedMessage(message.sign(keyPair.getPrivate()));
 
@@ -102,7 +109,7 @@ public class PasswordManager implements Closeable {
     }
 
     public void save_password(byte[] domain, byte[] username, byte[] password)
-            throws InvalidKeyException, IOException, SignatureException {
+            throws InvalidKeyException, IOException, SignatureException, ClassNotFoundException {
 
         PasswordRecord newRecord = new PasswordRecord(domain, username, password);
         SignedSealedObject<PasswordRecord> sealedRecord;
@@ -116,11 +123,13 @@ public class PasswordManager implements Closeable {
         final PutMessage message = new PutMessage(keyPair.getPublic(), getHmac(domain, "domain"),
                 getHmac(username, "username"), SerializationUtils.serialize(sealedRecord));
 
+        // Get an auth token for this message, to prevent replay attacks
+        message.authToken = getAuthToken(message.uuid);
+
         httpClient.sendSignedMessage(message.sign(keyPair.getPrivate()));
     }
 
     public void close() {
-        //TODO not sure if we need anything here
     }
 
     private byte[] getHmac(byte[] message, String context) {
@@ -149,5 +158,20 @@ public class PasswordManager implements Closeable {
         }
 
         return hmacSha256.doFinal(messageToSign);
+    }
+
+    private UUID getAuthToken(UUID messageId)
+            throws InvalidKeyException, SignatureException, IOException, ClassNotFoundException {
+        AuthRequestMessage message = new AuthRequestMessage(keyPair.getPublic(), messageId);
+
+        byte[] response = httpClient.sendSignedMessage(message.sign(keyPair.getPrivate()));
+
+        Message responseMessage = Message.deserializeSignedMessage(response);
+
+        if ((responseMessage instanceof AuthReplyMessage)
+                && ((AuthReplyMessage) responseMessage).messageId.equals(messageId)) {
+            return ((AuthReplyMessage) responseMessage).authToken;
+        }
+        throw new ClassNotFoundException("Invalid auth token response");
     }
 }

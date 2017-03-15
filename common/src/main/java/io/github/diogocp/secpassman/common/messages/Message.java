@@ -20,6 +20,8 @@ public class Message implements Serializable {
     public final ZonedDateTime date;
     public final PublicKey publicKey;
 
+    public UUID authToken;
+
     protected Message(PublicKey publicKey) {
         uuid = UUID.randomUUID();
         date = ZonedDateTime.now();

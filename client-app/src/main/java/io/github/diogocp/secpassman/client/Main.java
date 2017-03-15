@@ -102,7 +102,7 @@ public class Main {
                     LOG.error("Error getting password", e);
                 }
             }
-        } catch (IOException | InvalidKeyException | SignatureException e) {
+        } catch (IOException | InvalidKeyException | SignatureException | ClassNotFoundException e) {
             throw new RuntimeException(e);
         }
     }
