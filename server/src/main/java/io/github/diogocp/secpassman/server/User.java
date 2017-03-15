@@ -2,10 +2,11 @@ package io.github.diogocp.secpassman.server;
 
 import com.google.common.collect.HashBasedTable;
 import com.google.common.collect.Table;
+import java.io.Serializable;
 import java.security.PublicKey;
 import java.util.Base64;
 
-class User {
+class User implements Serializable {
 
     private static final Base64.Encoder base64 = Base64.getEncoder();
 

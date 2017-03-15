@@ -1,6 +1,7 @@
 package io.github.diogocp.secpassman.server;
 
 import com.sun.net.httpserver.HttpServer;
+import io.github.diogocp.secpassman.common.Config;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 
@@ -9,9 +10,12 @@ public class Main {
     public static void main(String[] args) {
         final ServerApi serverApi = new ServerApi();
 
+        final Config config = new Config();
+        final int port = Integer.parseInt(config.getPort());
+
         HttpServer server;
         try {
-            server = HttpServer.create(new InetSocketAddress(4567), 0);
+            server = HttpServer.create(new InetSocketAddress(port), 0);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
