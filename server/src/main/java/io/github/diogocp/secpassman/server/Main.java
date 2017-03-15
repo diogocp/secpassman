@@ -8,7 +8,8 @@ import java.net.InetSocketAddress;
 public class Main {
 
     public static void main(String[] args) {
-        final ServerApi serverApi = new ServerApi();
+        final DataStore dataStore = new DataStore("data.ser");
+        final ServerApi serverApi = new ServerApi(dataStore);
 
         final Config config = new Config();
         final String ip = config.getHost();
