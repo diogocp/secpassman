@@ -40,6 +40,7 @@ public class Main {
         }
         server.createContext("/secpassman", new RequestHandler(serverApi, dataStore));
         server.setExecutor(null);
+        LOG.info("Starting server");
         server.start();
     }
 }

@@ -8,4 +8,10 @@ dependencies {
     implementation group: 'com.mashape.unirest', name: 'unirest-java', version: '1.4.9'
     implementation group: 'org.apache.commons', name: 'commons-lang3', version: '3.5'
     implementation group: 'org.slf4j', name: 'slf4j-simple', version: '1.7.24'
+
+    testCompile project(':server')
+    testCompile group: 'org.junit', name: 'junit', version: '4.12'
 }
+
+test.dependsOn(":server:startServer")
+test.finalizedBy(":server:stopServer")

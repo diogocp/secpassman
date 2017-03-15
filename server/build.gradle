@@ -1,3 +1,12 @@
+buildscript {
+    repositories {
+        maven { url 'http://dl.bintray.com/vermeulen-mp/gradle-plugins' }
+    }
+    dependencies {
+        classpath 'com.wiredforcode:gradle-spawn-plugin:0.8.1'
+    }
+}
+
 plugins {
     id 'java'
     id 'application'
@@ -11,3 +20,15 @@ dependencies {
     compile group: 'org.apache.commons', name: 'commons-lang3', version: '3.5'
     compile group: 'org.slf4j', name: 'slf4j-simple', version: '1.7.24'
 }
+
+
+import com.wiredforcode.gradle.spawn.*
+
+apply plugin: 'com.wiredforcode.spawn'
+
+task startServer(type: SpawnProcessTask) {
+    command './gradlew :server:run'
+    ready 'io.github.diogocp.secpassman.server.Main - Starting server'
+}
+
+task stopServer(type: KillProcessTask)
