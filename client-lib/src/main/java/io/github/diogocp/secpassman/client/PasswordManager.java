@@ -132,7 +132,7 @@ public class PasswordManager implements Closeable {
     public void close() {
     }
 
-    private byte[] getHmac(byte[] message, String context) {
+    public byte[] getHmac(byte[] message, String context) {
         final byte[] messageToSign;
 
         try (final ByteArrayOutputStream bos = new ByteArrayOutputStream()) {
@@ -160,7 +160,7 @@ public class PasswordManager implements Closeable {
         return hmacSha256.doFinal(messageToSign);
     }
 
-    private UUID getAuthToken(UUID messageId)
+    public UUID getAuthToken(UUID messageId)
             throws InvalidKeyException, SignatureException, IOException, ClassNotFoundException {
         AuthRequestMessage message = new AuthRequestMessage(keyPair.getPublic(), messageId);
 
