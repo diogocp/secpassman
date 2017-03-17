@@ -76,15 +76,25 @@ public class PasswordManager implements Closeable {
         // Get an auth token for this message, to prevent replay attacks
         message.authToken = getAuthToken(message.uuid);
 
-        byte[] serializedRecord = httpClient.sendSignedMessage(message.sign(keyPair.getPrivate()));
+        byte[] response = httpClient.sendSignedMessage(message.sign(keyPair.getPrivate()));
 
-        if (serializedRecord == null) {
-            throw new IllegalArgumentException("Password record not found");
+        if (response == null) {
+            throw new ClassNotFoundException("Server returned an empty response");
+        }
+
+        Message responseMessage = Message.deserializeSignedMessage(response);
+        if (!keyPair.getPublic().equals(responseMessage.publicKey)) {
+            throw new SignatureException("Server response is not signed by us");
+
+        }
+        if (!(responseMessage instanceof PutMessage)) {
+            throw new ClassNotFoundException("Server returned an invalid response");
         }
 
         SignedSealedObject<PasswordRecord> signedSealedRecord;
         try {
-            signedSealedRecord = SignedSealedObject.safeDeserialize(serializedRecord);
+            byte[] passwordRecord = ((PutMessage) responseMessage).password;
+            signedSealedRecord = SignedSealedObject.safeDeserialize(passwordRecord);
         } catch (IOException e) {
             // TODO tried to deserialize wrong class?
             throw new RuntimeException(e);

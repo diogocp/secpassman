@@ -38,12 +38,13 @@ class RequestHandler implements HttpHandler {
     public void handle(HttpExchange httpExchange) throws IOException {
         LOG.info("Got a request from {}", httpExchange.getRemoteAddress());
 
+        byte[] messageBytes;
         Message message;
         try {
+            messageBytes = ByteStreams.toByteArray(httpExchange.getRequestBody());
             // Deserialization fails if the message is not signed with the private key
             // corresponding to the public key in the message.
-            message = Message.deserializeSignedMessage(
-                    ByteStreams.toByteArray(httpExchange.getRequestBody()));
+            message = Message.deserializeSignedMessage(messageBytes);
 
         } catch (SignatureException | ClassNotFoundException e) {
             LOG.warn("Message deserialization failed", e);
@@ -106,7 +107,7 @@ class RequestHandler implements HttpHandler {
 
         if (message instanceof PutMessage) {
             LOG.debug("Handling put request");
-            handlePut((PutMessage) message);
+            handlePut((PutMessage) message, messageBytes);
             sendResponse(httpExchange, 200, null);
         } else if (message instanceof GetMessage) {
             LOG.debug("Handling get request");
@@ -134,8 +135,8 @@ class RequestHandler implements HttpHandler {
 
     }
 
-    private void handlePut(PutMessage message) {
-        serverApi.put(message.publicKey, message.domain, message.username, message.password);
+    private void handlePut(PutMessage message, byte[] rawMessage) {
+        serverApi.put(message.publicKey, message.domain, message.username, rawMessage);
     }
 
     private byte[] handleGet(GetMessage message) {
