@@ -1,8 +1,6 @@
 package io.github.diogocp.secpassman.client;
 
 import io.github.diogocp.secpassman.common.KeyStoreUtils;
-import io.github.diogocp.secpassman.common.PasswordRecord;
-import io.github.diogocp.secpassman.common.SignedSealedObject;
 import io.github.diogocp.secpassman.common.messages.AuthReplyMessage;
 import io.github.diogocp.secpassman.common.messages.AuthRequestMessage;
 import io.github.diogocp.secpassman.common.messages.GetMessage;
@@ -91,17 +89,17 @@ public class PasswordManager implements Closeable {
             throw new ClassNotFoundException("Server returned an invalid response");
         }
 
-        SignedSealedObject<PasswordRecord> signedSealedRecord;
+        RsaSealedObject<PasswordRecord> signedSealedRecord;
         try {
             byte[] passwordRecord = ((PutMessage) responseMessage).password;
-            signedSealedRecord = SignedSealedObject.safeDeserialize(passwordRecord);
+            signedSealedRecord = RsaSealedObject.safeDeserialize(passwordRecord);
         } catch (IOException e) {
             // TODO tried to deserialize wrong class?
             throw new RuntimeException(e);
         }
 
         try {
-            PasswordRecord record = signedSealedRecord.getObject(keyPair);
+            PasswordRecord record = signedSealedRecord.getObject(keyPair.getPrivate());
 
             if (Arrays.equals(domain, record.getDomain())
                     && Arrays.equals(username, record.getUsername())) {
@@ -122,10 +120,10 @@ public class PasswordManager implements Closeable {
             throws InvalidKeyException, IOException, SignatureException, ClassNotFoundException {
 
         PasswordRecord newRecord = new PasswordRecord(domain, username, password);
-        SignedSealedObject<PasswordRecord> sealedRecord;
+        RsaSealedObject<PasswordRecord> sealedRecord;
 
         try {
-            sealedRecord = new SignedSealedObject<>(newRecord, keyPair);
+            sealedRecord = new RsaSealedObject<>(newRecord, keyPair.getPublic());
         } catch (InvalidKeyException | IOException e) {
             throw new RuntimeException("Failed to encrypt password record", e);
         }

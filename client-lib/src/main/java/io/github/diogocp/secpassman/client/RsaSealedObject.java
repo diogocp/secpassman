@@ -1,16 +1,13 @@
-package io.github.diogocp.secpassman.common;
+package io.github.diogocp.secpassman.client;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.Serializable;
 import java.security.InvalidKeyException;
-import java.security.KeyPair;
 import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
 import java.security.PublicKey;
-import java.security.Signature;
 import java.security.SignatureException;
-import java.security.SignedObject;
 import javax.crypto.Cipher;
 import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.KeyGenerator;
@@ -19,16 +16,17 @@ import javax.crypto.SealedObject;
 import javax.crypto.SecretKey;
 import org.apache.commons.io.serialization.ValidatingObjectInputStream;
 
-public class SignedSealedObject<T extends Serializable> implements Serializable {
+class RsaSealedObject<T extends Serializable> implements Serializable {
 
     private static final long serialVersionUID = 666L;
 
-    private final SignedObject signedObject;
+    private final SealedObject sealedObject;
+    private final byte[] wrappedKey;
 
-    public SignedSealedObject(T object, KeyPair keyPair)
+    RsaSealedObject(T object, PublicKey publicKey)
             throws InvalidKeyException, IOException {
 
-        if (!keyPair.getPublic().getAlgorithm().equals("RSA")) {
+        if (!publicKey.getAlgorithm().equals("RSA")) {
             throw new InvalidKeyException("Only RSA keys are supported.");
         }
 
@@ -37,7 +35,6 @@ public class SignedSealedObject<T extends Serializable> implements Serializable 
         final Cipher cipher = getCipher(secretKey);
 
         // Encrypt the object
-        final SealedObject sealedObject;
         try {
             sealedObject = new SealedObject(object, cipher);
         } catch (IllegalBlockSizeException e) {
@@ -45,61 +42,21 @@ public class SignedSealedObject<T extends Serializable> implements Serializable 
         }
 
         // Wrap the key used to encrypt the object using the public key
-        final byte[] wrappedKey = wrapSecretKey(secretKey, keyPair.getPublic());
-
-        // Create a new object containing the sealed object and the key used to seal it (wrapped)
-        final SealedObjectWrapper wrappedObject = new SealedObjectWrapper(sealedObject, wrappedKey);
-
-        // Set up the signing engine used to sign the object
-        final Signature signingEngine;
-        try {
-            signingEngine = Signature.getInstance("SHA256withRSA");
-        } catch (NoSuchAlgorithmException e) {
-            // Every implementation of the Java platform is required to
-            // support the SHA256withRSA signature algorithm.
-            throw new RuntimeException(e);
-        }
-
-        try {
-            signedObject = new SignedObject(wrappedObject, keyPair.getPrivate(), signingEngine);
-        } catch (SignatureException e) {
-            throw new InvalidKeyException(e);
-        }
+        wrappedKey = wrapSecretKey(secretKey, publicKey);
     }
 
-    public T getObject(KeyPair keyPair)
+    T getObject(PrivateKey privateKey)
             throws InvalidKeyException, SignatureException, IOException, ClassNotFoundException {
 
-        if (!verify(keyPair.getPublic())) {
-            throw new SignatureException("Signature verification failed.");
-        }
-
-        SealedObjectWrapper wrappedObject = (SealedObjectWrapper) signedObject.getObject();
-        SecretKey secretKey = unwrapSecretKey(wrappedObject.getWrappedKey(), keyPair.getPrivate());
+        final SecretKey secretKey = unwrapSecretKey(wrappedKey, privateKey);
 
         try {
-            return (T) wrappedObject.getObject(secretKey);
+            return (T) sealedObject.getObject(secretKey);
         } catch (NoSuchAlgorithmException e) {
             // Every implementation of the Java platform is required to
             // support the AES/CBC/PKCS5Padding cipher.
             throw new RuntimeException(e);
         }
-    }
-
-    private boolean verify(PublicKey verificationKey)
-            throws InvalidKeyException, SignatureException {
-
-        // The signing engine used to verify the object
-        Signature verificationEngine;
-        try {
-            verificationEngine = Signature.getInstance("SHA256withRSA");
-        } catch (NoSuchAlgorithmException e) {
-            // Every implementation of the Java platform is required to
-            // support the SHA256withRSA signature algorithm.
-            throw new RuntimeException(e);
-        }
-
-        return signedObject.verify(verificationKey, verificationEngine);
     }
 
     private static SecretKey generateSecretKey() {
@@ -157,33 +114,17 @@ public class SignedSealedObject<T extends Serializable> implements Serializable 
         }
     }
 
-    public static SignedSealedObject safeDeserialize(byte[] object)
-            throws IOException {
+    static RsaSealedObject safeDeserialize(byte[] object) throws IOException {
         final ByteArrayInputStream is = new ByteArrayInputStream(object);
         final ValidatingObjectInputStream vis = new ValidatingObjectInputStream(is);
 
-        vis.accept(SignedSealedObject.class, SignedObject.class);
+        vis.accept(RsaSealedObject.class, SealedObject.class);
         vis.accept("[B"); // byte primitive type
 
         try {
-            return (SignedSealedObject) vis.readObject();
+            return (RsaSealedObject) vis.readObject();
         } catch (ClassNotFoundException e) {
-            // Impossible!
             throw new RuntimeException(e);
-        }
-    }
-
-    private class SealedObjectWrapper extends SealedObject {
-
-        private final byte[] wrappedKey;
-
-        SealedObjectWrapper(SealedObject sealedObject, byte[] wrappedKey) {
-            super(sealedObject);
-            this.wrappedKey = wrappedKey;
-        }
-
-        byte[] getWrappedKey() {
-            return wrappedKey;
         }
     }
 }

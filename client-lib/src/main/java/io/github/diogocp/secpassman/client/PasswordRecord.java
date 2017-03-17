@@ -1,4 +1,4 @@
-package io.github.diogocp.secpassman.common;
+package io.github.diogocp.secpassman.client;
 
 import java.io.Serializable;
 import java.time.ZonedDateTime;
