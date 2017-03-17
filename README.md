@@ -21,4 +21,7 @@ Client
 client-app/build/install/client-app/bin/client-app (register|add|get) [DOMAIN USERNAME]
 ```
 
+Tests
+./gradlew :client-lib:test
+
 See `client-app/build/install/client-app/bin/client-app --help` for usage information.
