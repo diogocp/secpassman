@@ -30,7 +30,7 @@ class HttpClient {
             throw new IOException(e);
         }
 
-        LOG.info("sendSignedMessage status: {} {}", response.getStatus(), response.getStatusText());
+        LOG.debug("Server response status: {} {}", response.getStatus(), response.getStatusText());
 
         if (response.getStatus() == 200) {
             InputStream is = response.getRawBody();
