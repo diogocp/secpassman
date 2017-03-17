@@ -20,10 +20,10 @@ public class RegisterTest {
 
     private static final Logger LOG = LoggerFactory.getLogger(RegisterTest.class);
 
-    KeyPair keyPair;
-    PasswordManager manager;
-    Config config;
-    KeyStore keyStore;
+    private KeyPair keyPair;
+    private PasswordManager manager;
+    private Config config;
+    private KeyStore keyStore;
 
     public RegisterTest() {
 

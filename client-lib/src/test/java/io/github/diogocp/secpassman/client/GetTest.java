@@ -1,8 +1,8 @@
 package io.github.diogocp.secpassman.client;
 
-
 import io.github.diogocp.secpassman.common.Config;
 import io.github.diogocp.secpassman.common.KeyStoreUtils;
+import io.github.diogocp.secpassman.common.messages.GetMessage;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.security.InvalidKeyException;
@@ -16,10 +16,10 @@ import org.junit.Assert;
 import org.junit.Test;
 
 public class GetTest {
-    KeyPair keyPair;
-    PasswordManager manager;
-    Config config;
-    KeyStore keyStore;
+    private KeyPair keyPair;
+    private PasswordManager manager;
+    private Config config;
+    private KeyStore keyStore;
 
     public GetTest() {
 
@@ -74,4 +74,11 @@ public class GetTest {
         String password2 = new String(passwordRetrieved);
         Assert.assertEquals(password, password2);
     }
+
+    @Test
+    public void noAuthKeyTest() {
+        //GetMessage message = new GetMessage(keyPair.getPublic(), getHmac(domain, "domain"),
+          //      getHmac(username, "username"));
+    }
+
 }
