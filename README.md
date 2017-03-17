@@ -10,7 +10,7 @@ Server
 ./gradlew :server:run
 ```
 
-The server listens on port 4567.
+The server listens on port 4567 by default.
 
 
 Client
@@ -32,7 +32,7 @@ Tests
 
 Replay attacks
 --------------
-The packets were captured using the GoReplay tool (https://github.com/buger/goreplay)
+The packets were captured using [GoReplay](https://github.com/buger/goreplay).
 
 To capture new packets run:
 ```sh
