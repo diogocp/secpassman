@@ -29,3 +29,24 @@ Tests
 ```sh
 ./gradlew test
 ```
+
+Replay attacks
+--------------
+The packets were captured using the GoReplay tool (https://github.com/buger/goreplay)
+
+To capture new packets run:
+```sh
+sudo ./gor --input-raw :(port) --output-file=(name).gor
+```
+
+To inject the packets in the network run:
+```sh
+sudo ./gor --input-file (name).gor --output-http="(host):(port)"
+```
+
+For example, to run the add replay attack in replay_attacks folder run:
+```sh
+sudo ./gor --input-file newadd_0.gor --output-http="127.0.0.1:4567"
+```
+
+
