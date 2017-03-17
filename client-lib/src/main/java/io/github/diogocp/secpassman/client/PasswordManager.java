@@ -89,17 +89,17 @@ public class PasswordManager implements Closeable {
             throw new ClassNotFoundException("Server returned an invalid response");
         }
 
-        RsaSealedObject<PasswordRecord> signedSealedRecord;
+        RsaSealedObject<PasswordRecord> rsaSealedObject;
         try {
             byte[] passwordRecord = ((PutMessage) responseMessage).password;
-            signedSealedRecord = RsaSealedObject.safeDeserialize(passwordRecord);
+            rsaSealedObject = RsaSealedObject.safeDeserialize(passwordRecord);
         } catch (IOException e) {
             // TODO tried to deserialize wrong class?
             throw new RuntimeException(e);
         }
 
         try {
-            PasswordRecord record = signedSealedRecord.getObject(keyPair.getPrivate());
+            PasswordRecord record = rsaSealedObject.getObject(keyPair.getPrivate());
 
             if (Arrays.equals(domain, record.getDomain())
                     && Arrays.equals(username, record.getUsername())) {

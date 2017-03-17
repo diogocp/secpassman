@@ -18,7 +18,7 @@ import org.apache.commons.io.serialization.ValidatingObjectInputStream;
 
 class RsaSealedObject<T extends Serializable> implements Serializable {
 
-    private static final long serialVersionUID = 666L;
+    private static final long serialVersionUID = -7306842115417397836L;
 
     private final SealedObject sealedObject;
     private final byte[] wrappedKey;
