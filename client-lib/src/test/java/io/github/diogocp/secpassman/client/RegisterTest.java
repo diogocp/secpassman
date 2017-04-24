@@ -27,7 +27,7 @@ public class RegisterTest {
 
     public RegisterTest() {
 
-        config = new Config();
+        config = new Config("config.properties");
 
         try {
             keyStore = KeyStoreUtils.loadKeyStore("../secpassman.jks", "jkspass");

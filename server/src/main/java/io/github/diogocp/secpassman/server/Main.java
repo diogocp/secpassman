@@ -28,7 +28,7 @@ public class Main {
         final DataStore dataStore = new DataStore("data.ser");
         final ServerApi serverApi = new ServerApi(keyPair, dataStore);
 
-        final Config config = new Config();
+        final Config config = new Config("config.properties");
         final String ip = config.getHost();
         final int port = config.getPort();
 

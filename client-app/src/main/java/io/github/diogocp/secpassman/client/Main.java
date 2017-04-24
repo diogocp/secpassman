@@ -25,7 +25,7 @@ public class Main {
         CommandMain cmdMain = new CommandMain();
         CommandAddGet cmdAddGet = new CommandAddGet();
         JCommander cli = new JCommander(cmdMain);
-        Config config = new Config();
+        Config config = new Config("config.properties");
 
         cli.addCommand("register", new CommandRegister());
         cli.addCommand("add", cmdAddGet);

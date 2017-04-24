@@ -29,7 +29,7 @@ public class PutTest {
 
     public PutTest() {
 
-        config = new Config();
+        config = new Config("config.properties");
 
         try {
             keyStore = KeyStoreUtils.loadKeyStore("../secpassman.jks", "jkspass");

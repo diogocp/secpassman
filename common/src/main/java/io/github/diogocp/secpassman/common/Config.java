@@ -13,9 +13,7 @@ public class Config {
     private final String port;
     private final List<InetSocketAddress> servers = new ArrayList<>();
 
-    private final String filename = "config.properties";
-
-    public Config() {
+    public Config(String filename) {
         final Properties prop = new Properties();
 
         try (InputStream input = getClass().getClassLoader().getResourceAsStream(filename)) {
