@@ -32,7 +32,7 @@ public class GetTest {
             System.err.println(e.getMessage());
             throw new RuntimeException(e);
         }
-        manager = new PasswordManager(config.getHost(), Integer.parseInt(config.getPort()));
+        manager = new PasswordManager(config.getHost(), config.getPort());
         manager.init(keyStore, "client", "jkspass");
     }
 

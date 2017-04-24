@@ -30,7 +30,7 @@ public class Main {
 
         final Config config = new Config();
         final String ip = config.getHost();
-        final int port = Integer.parseInt(config.getPort());
+        final int port = config.getPort();
 
         HttpServer server;
         try {

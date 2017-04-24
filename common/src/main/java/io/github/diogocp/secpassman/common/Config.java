@@ -9,35 +9,20 @@ import java.util.Properties;
 
 public class Config {
 
-    private String host;
-    private String port;
+    private final String host;
+    private final String port;
     private final List<InetSocketAddress> servers = new ArrayList<>();
 
+    private final String filename = "config.properties";
+
     public Config() {
-        this.getPropertyValues();
-    }
-
-    public String getHost() {
-        return host;
-    }
-
-    public String getPort() {
-        return port;
-    }
-
-    public List<InetSocketAddress> getServers() {
-        return servers;
-    }
-
-    public void getPropertyValues() {
-        Properties prop = new Properties();
-        String filename = "config.properties";
+        final Properties prop = new Properties();
 
         try (InputStream input = getClass().getClassLoader().getResourceAsStream(filename)) {
             prop.load(input);
 
-            host = prop.getProperty("host");
-            port = prop.getProperty("port");
+            host = prop.getProperty("host", "");
+            port = prop.getProperty("port", "");
 
             for (String server : prop.getProperty("servers", "").split(",")) {
                 String[] ip_port = server.split(":");
@@ -48,5 +33,23 @@ public class Config {
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    public String getHost() {
+        if (host.isEmpty()) {
+            throw new RuntimeException("host not defined in properties");
+        }
+        return host;
+    }
+
+    public Integer getPort() {
+        if (port.isEmpty()) {
+            throw new RuntimeException("port not defined in properties");
+        }
+        return Integer.parseInt(port);
+    }
+
+    public List<InetSocketAddress> getServers() {
+        return servers;
     }
 }

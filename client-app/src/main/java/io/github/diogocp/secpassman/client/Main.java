@@ -66,14 +66,7 @@ public class Main {
             return;
         }
 
-        try{
-            config.getPropertyValues();
-        }
-        catch(Exception e){
-            LOG.error("Error while loading the properties file");
-        }
-
-        try (PasswordManager manager = new PasswordManager(config.getHost(), Integer.parseInt(config.getPort()))) {
+        try (PasswordManager manager = new PasswordManager(config.getHost(), config.getPort())) {
             // Client API initialization
 
             manager.init(keyStore, "client",cmdMain.getKeystorePassword());
