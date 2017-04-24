@@ -1,49 +1,52 @@
 package io.github.diogocp.secpassman.common;
 
-
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.InetSocketAddress;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Properties;
 
 public class Config {
+
     private String host;
     private String port;
+    private final List<InetSocketAddress> servers = new ArrayList<>();
 
-    public Config(){
+    public Config() {
         this.getPropertyValues();
     }
 
-    public String getHost() { return host;}
-    public String getPort() { return port; }
+    public String getHost() {
+        return host;
+    }
 
+    public String getPort() {
+        return port;
+    }
 
-    public void getPropertyValues(){
+    public List<InetSocketAddress> getServers() {
+        return servers;
+    }
 
+    public void getPropertyValues() {
         Properties prop = new Properties();
-        InputStream input = null;
         String filename = "config.properties";
 
-        try {
-
-            input = getClass().getClassLoader().getResourceAsStream(filename);
-
-            // load a properties file
+        try (InputStream input = getClass().getClassLoader().getResourceAsStream(filename)) {
             prop.load(input);
 
             host = prop.getProperty("host");
             port = prop.getProperty("port");
 
-        } catch (IOException ex) {
-            ex.printStackTrace();
-        } finally {
-            if (input != null) {
-                try {
-                    input.close();
-                } catch (IOException e) {
-                    e.printStackTrace();
+            for (String server : prop.getProperty("servers", "").split(",")) {
+                String[] ip_port = server.split(":");
+                if (ip_port.length == 2) {
+                    servers.add(new InetSocketAddress(ip_port[0], Integer.parseInt(ip_port[1])));
                 }
             }
+        } catch (IOException e) {
+            throw new RuntimeException(e);
         }
-
     }
 }
