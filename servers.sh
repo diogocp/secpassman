@@ -8,7 +8,7 @@ UPPER_PORT=65535
 FOLDER="src/main/resources"
 servers="servers="
 
-if [ $(($N + $LOWER_PORT)) -lt "$UPPER_PORT" ]; then
+if [ $(($N + $LOWER_PORT)) -le "$UPPER_PORT" ]; then
 	for ((i=1; i<=$N; i++)); do
 		 port=$(($i+$LOWER_PORT))
 		  if [ "$i" -lt "$N" ]; then
@@ -27,5 +27,8 @@ if [ $(($N + $LOWER_PORT)) -lt "$UPPER_PORT" ]; then
 		 echo "port=$port" >> "server_$i/$FOLDER/config.properties"
 		 printf "$servers\n" >> "server_$i/$FOLDER/config.properties"
 	done
+
+else
+	echo "Invalid number of servers"
 fi
 
