@@ -3,6 +3,12 @@ Dependable Password Manager
 
 Course project for *Highly Dependable Systems*, spring 2017 semester.
 
+Generate Servers
+-----
+```sh
+sh servers.sh (number of fault servers)
+```
+
 Server
 ------
 
