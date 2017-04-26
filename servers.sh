@@ -7,6 +7,7 @@ LOWER_PORT=4567
 UPPER_PORT=65535
 FOLDER="src/main/resources"
 servers="servers="
+DIRECTORY="servers.tmp"
 
 if [ $(($N + $LOWER_PORT)) -le "$UPPER_PORT" ]; then
 	for ((i=1; i<=$N; i++)); do
@@ -17,11 +18,15 @@ if [ $(($N + $LOWER_PORT)) -le "$UPPER_PORT" ]; then
 			servers="${servers}localhost:$port"
 		 fi
 	done
-	printf "$servers\n" >> "common/$FOLDER/config.properties"
+	printf "$servers\n" > "common/$FOLDER/config.properties"
+
+	if [ -d "$DIRECTORY" ]; then
+	    eval $(rm -rf "$DIRECTORY")
+	    eval $(mkdir -p "$DIRECTORY" && cd "$DIRECTORY")
+    fi
 
 	for ((i=1; i<=$N; i++)); do
 		 port=$(($i+$LOWER_PORT))
-		 mkdir -p server_$i
 		 cp -R "server/" "server_$i/"
          cd "server_$i"
          echo "Starting server $i"
