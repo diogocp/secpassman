@@ -66,7 +66,7 @@ public class Main {
             return;
         }
 
-        try (PasswordManager manager = new PasswordManager(config.getHost(), config.getPort())) {
+        try (PasswordManager manager = new PasswordManager(config.getServers())) {
             // Client API initialization
 
             manager.init(keyStore, "client",cmdMain.getKeystorePassword());

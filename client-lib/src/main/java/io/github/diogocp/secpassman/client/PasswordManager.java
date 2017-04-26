@@ -10,6 +10,7 @@ import io.github.diogocp.secpassman.common.messages.RegisterMessage;
 import java.io.ByteArrayOutputStream;
 import java.io.Closeable;
 import java.io.IOException;
+import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
 import java.security.InvalidKeyException;
 import java.security.KeyPair;
@@ -19,6 +20,7 @@ import java.security.Signature;
 import java.security.SignatureException;
 import java.security.SignedObject;
 import java.util.Arrays;
+import java.util.List;
 import java.util.UUID;
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
@@ -32,7 +34,11 @@ public class PasswordManager implements Closeable {
     private final Signature sha256WithRsa;
     private final Mac hmacSha256;
 
-    public PasswordManager(String host, int port) {
+    public PasswordManager(List<InetSocketAddress> servers) {
+        this(servers.get(0).getHostName(), servers.get(0).getPort());
+    }
+
+    private PasswordManager(String host, int port) {
         this.httpClient = new HttpClient(host, port);
 
         try {
