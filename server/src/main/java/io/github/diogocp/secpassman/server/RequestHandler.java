@@ -5,18 +5,17 @@ import static org.apache.commons.lang3.ArrayUtils.EMPTY_BYTE_ARRAY;
 import com.google.common.io.ByteStreams;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
-import io.github.diogocp.secpassman.common.messages.AuthReplyMessage;
-import io.github.diogocp.secpassman.common.messages.AuthRequestMessage;
 import io.github.diogocp.secpassman.common.messages.GetMessage;
 import io.github.diogocp.secpassman.common.messages.Message;
 import io.github.diogocp.secpassman.common.messages.PutMessage;
 import io.github.diogocp.secpassman.common.messages.RegisterMessage;
+import io.github.diogocp.secpassman.common.messages.TimestampReplyMessage;
+import io.github.diogocp.secpassman.common.messages.TimestampRequestMessage;
 import io.github.diogocp.secpassman.server.exceptions.BadRequestException;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.security.InvalidKeyException;
 import java.security.SignatureException;
-import java.util.UUID;
 import org.apache.commons.lang3.SerializationUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -53,7 +52,7 @@ class RequestHandler implements HttpHandler {
         }
         LOG.debug("Message signature verified");
 
-        // Register requests do not need an authentication token
+        // Register requests do not need a timestamp
         if (message instanceof RegisterMessage) {
             LOG.debug("Handling register request");
             try {
@@ -65,7 +64,7 @@ class RequestHandler implements HttpHandler {
             return;
         }
 
-        // Register requests also do not need an authentication token, but the user
+        // Register requests also do not need a timestamp, but the user
         // must already be registered
         User user = dataStore.getUser(message.publicKey);
         if (user == null) {
@@ -75,35 +74,35 @@ class RequestHandler implements HttpHandler {
         }
         LOG.debug("User is registered");
 
-        if (message instanceof AuthRequestMessage) {
-            LOG.debug("Handling authentication request");
+        if (message instanceof TimestampRequestMessage) {
+            LOG.debug("Handling timestamp request");
 
             byte[] response = null;
             try {
-                response = handleAuth((AuthRequestMessage) message);
+                response = handleTimestamp((TimestampRequestMessage) message);
             } catch (InvalidKeyException | SignatureException e) {
-                LOG.error("Error while handling auth request", e);
+                LOG.error("Error while handling timestamp request", e);
             } finally {
                 if (response == null) {
-                    LOG.debug("Null auth reply");
+                    LOG.debug("Null timestamp reply");
                     sendResponse(httpExchange, 500, null);
                 } else {
-                    LOG.debug("Sending auth reply");
+                    LOG.debug("Sending timestamp reply");
                     sendResponse(httpExchange, 200, response);
                 }
             }
             return;
         }
 
-        // All other requests need to provide a fresh authentication token
-        LOG.debug("Message has auth token {}", message.authToken);
+        // All other requests need to provide a timestamp
+        LOG.debug("Message has timestamp {}", message.timestamp);
 
-        if (!user.verifyAuthToken(message.authToken)) {
-            LOG.warn("Request denied due to invalid authentication token");
+        if (!user.verifyTimestamp(message.timestamp)) {
+            LOG.warn("(IGNORED) Request denied due to invalid timestamp");
             sendResponse(httpExchange, 403, null);
             return;
         }
-        LOG.debug("Authentication token verified");
+        LOG.debug("Timestamp verified");
 
         if (message instanceof PutMessage) {
             LOG.debug("Handling put request");
@@ -118,11 +117,12 @@ class RequestHandler implements HttpHandler {
         }
     }
 
-    private byte[] handleAuth(AuthRequestMessage message)
+    private byte[] handleTimestamp(TimestampRequestMessage message)
             throws InvalidKeyException, IOException, SignatureException {
-        UUID authToken = dataStore.getUser(message.publicKey).newAuthToken(message.messageId);
-        AuthReplyMessage response =
-                new AuthReplyMessage(serverApi.keyPair.getPublic(), message.messageId, authToken);
+        long timestamp = dataStore.getUser(message.publicKey).getTimestamp();
+        TimestampReplyMessage response =
+                new TimestampReplyMessage(serverApi.keyPair.getPublic(), message.messageId,
+                        timestamp);
         return SerializationUtils.serialize(response.sign(serverApi.keyPair.getPrivate()));
     }
 

@@ -1,12 +1,12 @@
 package io.github.diogocp.secpassman.client;
 
 import io.github.diogocp.secpassman.common.KeyStoreUtils;
-import io.github.diogocp.secpassman.common.messages.AuthReplyMessage;
-import io.github.diogocp.secpassman.common.messages.AuthRequestMessage;
 import io.github.diogocp.secpassman.common.messages.GetMessage;
 import io.github.diogocp.secpassman.common.messages.Message;
 import io.github.diogocp.secpassman.common.messages.PutMessage;
 import io.github.diogocp.secpassman.common.messages.RegisterMessage;
+import io.github.diogocp.secpassman.common.messages.TimestampReplyMessage;
+import io.github.diogocp.secpassman.common.messages.TimestampRequestMessage;
 import java.io.ByteArrayOutputStream;
 import java.io.Closeable;
 import java.io.IOException;
@@ -82,8 +82,8 @@ public class PasswordManager implements Closeable {
         final GetMessage message = new GetMessage(keyPair.getPublic(), getHmac(domain, "domain"),
                 getHmac(username, "username"));
 
-        // Get an auth token for this message, to prevent replay attacks
-        message.authToken = getAuthToken(message.uuid);
+        // Get a timestamp for this message
+        message.timestamp = getTimestamp(message.uuid);
 
         byte[] response = broadcastMessage(message.sign(keyPair.getPrivate()));
 
@@ -143,7 +143,7 @@ public class PasswordManager implements Closeable {
                 getHmac(username, "username"), SerializationUtils.serialize(sealedRecord));
 
         // Get an auth token for this message, to prevent replay attacks
-        message.authToken = getAuthToken(message.uuid);
+        message.timestamp = getTimestamp(message.uuid);
 
         broadcastMessage(message.sign(keyPair.getPrivate()));
     }
@@ -179,19 +179,19 @@ public class PasswordManager implements Closeable {
         return hmacSha256.doFinal(messageToSign);
     }
 
-    public UUID getAuthToken(UUID messageId)
+    public long getTimestamp(UUID messageId)
             throws InvalidKeyException, SignatureException, IOException, ClassNotFoundException {
-        AuthRequestMessage message = new AuthRequestMessage(keyPair.getPublic(), messageId);
+        TimestampRequestMessage message = new TimestampRequestMessage(keyPair.getPublic(), messageId);
 
         byte[] response = broadcastMessage(message.sign(keyPair.getPrivate()));
 
         Message responseMessage = Message.deserializeSignedMessage(response);
 
-        if ((responseMessage instanceof AuthReplyMessage)
-                && ((AuthReplyMessage) responseMessage).messageId.equals(messageId)) {
-            return ((AuthReplyMessage) responseMessage).authToken;
+        if ((responseMessage instanceof TimestampReplyMessage)
+                && ((TimestampReplyMessage) responseMessage).messageId.equals(messageId)) {
+            return ((TimestampReplyMessage) responseMessage).timestamp;
         }
-        throw new ClassNotFoundException("Invalid auth token response");
+        throw new ClassNotFoundException("Invalid timestamp response");
     }
 
     private byte[] broadcastMessage(SignedObject message) throws IOException {

@@ -21,6 +21,7 @@ public class Message implements Serializable {
     public final PublicKey publicKey;
 
     public UUID authToken;
+    public long timestamp;
 
     protected Message(PublicKey publicKey) {
         uuid = UUID.randomUUID();
