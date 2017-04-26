@@ -26,21 +26,25 @@ import java.util.stream.Collectors;
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
 import org.apache.commons.lang3.SerializationUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class PasswordManager implements Closeable {
 
-    private KeyPair keyPair;
-    private final HttpClient httpClient;
-    private final List<HttpClient> httpClients;
+    private static final Logger LOG = LoggerFactory.getLogger(PasswordManager.class);
 
+    private final List<HttpClient> servers;
+    private final int num_servers;
+    private final int max_failures;
+
+    private KeyPair keyPair;
     private final Signature sha256WithRsa;
     private final Mac hmacSha256;
 
     public PasswordManager(List<InetSocketAddress> serverList) {
-        httpClients = serverList.stream().map(HttpClient::new).collect(Collectors.toList());
-
-        // TODO: remove this
-        this.httpClient = httpClients.get(0);
+        servers = serverList.stream().map(HttpClient::new).collect(Collectors.toList());
+        num_servers = servers.size();
+        max_failures = (servers.size() - 1) / 3;
 
         try {
             sha256WithRsa = Signature.getInstance("SHA256withRSA");
@@ -70,7 +74,7 @@ public class PasswordManager implements Closeable {
             throw new RuntimeException(e);
         }
 
-        httpClient.sendSignedMessage(signedMessage);
+        broadcastMessage(signedMessage);
     }
 
     public byte[] retrieve_password(byte[] domain, byte[] username)
@@ -81,7 +85,7 @@ public class PasswordManager implements Closeable {
         // Get an auth token for this message, to prevent replay attacks
         message.authToken = getAuthToken(message.uuid);
 
-        byte[] response = httpClient.sendSignedMessage(message.sign(keyPair.getPrivate()));
+        byte[] response = broadcastMessage(message.sign(keyPair.getPrivate()));
 
         if (response == null) {
             throw new ClassNotFoundException("Server returned an empty response");
@@ -141,7 +145,7 @@ public class PasswordManager implements Closeable {
         // Get an auth token for this message, to prevent replay attacks
         message.authToken = getAuthToken(message.uuid);
 
-        httpClient.sendSignedMessage(message.sign(keyPair.getPrivate()));
+        broadcastMessage(message.sign(keyPair.getPrivate()));
     }
 
     public void close() {
@@ -179,7 +183,7 @@ public class PasswordManager implements Closeable {
             throws InvalidKeyException, SignatureException, IOException, ClassNotFoundException {
         AuthRequestMessage message = new AuthRequestMessage(keyPair.getPublic(), messageId);
 
-        byte[] response = httpClient.sendSignedMessage(message.sign(keyPair.getPrivate()));
+        byte[] response = broadcastMessage(message.sign(keyPair.getPrivate()));
 
         Message responseMessage = Message.deserializeSignedMessage(response);
 
@@ -188,5 +192,25 @@ public class PasswordManager implements Closeable {
             return ((AuthReplyMessage) responseMessage).authToken;
         }
         throw new ClassNotFoundException("Invalid auth token response");
+    }
+
+    private byte[] broadcastMessage(SignedObject message) throws IOException {
+        byte[][] response = new byte[num_servers][];
+        int num_failures = 0;
+
+        for (int s = 0; s < num_servers; s++) {
+            try {
+                response[s] = servers.get(s).sendSignedMessage(message);
+            } catch (IOException e) {
+                num_failures++;
+                LOG.warn("Sending message failed", e);
+            }
+        }
+
+        if (num_failures <= max_failures) {
+            return response[0];
+        } else {
+            throw new IOException("Failed broadcast");
+        }
     }
 }
