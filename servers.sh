@@ -17,7 +17,7 @@ if [ $(($N + $LOWER_PORT)) -le "$UPPER_PORT" ]; then
 			servers="${servers}localhost:$port"
 		 fi
 	done
-	printf "$servers\n" >> "client-lib/$FOLDER/config.properties"
+	printf "$servers\n" >> "common/$FOLDER/config.properties"
 
 	for ((i=1; i<=$N; i++)); do
 		 port=$(($i+$LOWER_PORT))
