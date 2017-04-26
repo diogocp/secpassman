@@ -7,7 +7,6 @@ N=$((3 * $F + 1))
 
 LOWER_PORT=4567
 UPPER_PORT=65535
-FOLDER="src/main/resources"
 servers="servers="
 DIRECTORY="servers.tmp"
 
@@ -20,7 +19,6 @@ if [ $(($N + $LOWER_PORT)) -le "$UPPER_PORT" ]; then
             servers="${servers}localhost:$port"
         fi
     done
-    printf "$servers\n" > "common/$FOLDER/config.properties"
 
     rm -r "$DIRECTORY"
     mkdir -p "$DIRECTORY"
@@ -30,12 +28,14 @@ if [ $(($N + $LOWER_PORT)) -le "$UPPER_PORT" ]; then
         cp -R "server/" "$DIRECTORY/server_$i/"
         (
             cd "$DIRECTORY/server_$i"
+            printf "$servers\n" > "config.properties"
             echo "Starting server $i"
             build/install/server/bin/server "$port"
         ) &
         sleep 2
     done
     echo "Ready"
+    printf "$servers\n" > "config.properties"
     wait
 else
     echo "Invalid number of servers"

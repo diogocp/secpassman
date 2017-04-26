@@ -1,5 +1,6 @@
 package io.github.diogocp.secpassman.common;
 
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.InetSocketAddress;
@@ -16,7 +17,7 @@ public class Config {
     public Config(String filename) {
         final Properties prop = new Properties();
 
-        try (InputStream input = getClass().getClassLoader().getResourceAsStream(filename)) {
+        try (InputStream input = new FileInputStream(filename)) {
             prop.load(input);
 
             host = prop.getProperty("host", "");

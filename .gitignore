@@ -8,3 +8,4 @@ bin/
 .project
 *.ser
 /servers.tmp/
+/config.properties
