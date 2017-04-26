@@ -28,13 +28,18 @@ public class Main {
         final DataStore dataStore = new DataStore("data.ser");
         final ServerApi serverApi = new ServerApi(keyPair, dataStore);
 
-        final Config config = new Config("config.properties");
-        final String ip = config.getHost();
-        final int port = config.getPort();
+        int port;
+        if(args.length == 1) {
+            port = Integer.parseInt(args[0]);
+        } else {
+            LOG.info("Port not specified on the command line, using default from properties file");
+            final Config config = new Config("config.properties");
+            port = config.getPort();
+        }
 
         HttpServer server;
         try {
-            server = HttpServer.create(new InetSocketAddress(ip, port), 0);
+            server = HttpServer.create(new InetSocketAddress(port), 0);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
