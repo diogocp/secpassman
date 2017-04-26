@@ -23,10 +23,14 @@ if [ $(($N + $LOWER_PORT)) -le "$UPPER_PORT" ]; then
 		 port=$(($i+$LOWER_PORT))
 		 mkdir -p server_$i
 		 cp -R "server/" "server_$i/"
-		 echo "host=localhost" >> "server_$i/$FOLDER/config.properties"
-		 echo "port=$port" >> "server_$i/$FOLDER/config.properties"
-		 printf "$servers\n" >> "server_$i/$FOLDER/config.properties"
+         cd "server_$i"
+         echo "Starting server $i"
+         eval $(build/install/server/bin/server "$port") &
+         sleep 2
+         cd ".."
 	done
+	echo "Ready"
+	wait
 
 else
 	echo "Invalid number of servers"
