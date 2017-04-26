@@ -13,6 +13,6 @@ Collection getListOfFolders(String dir, String pattern) {
 
 task clean {
 	doLast{
-	  delete getListOfFolders('./', /server_.*/), 'client-lib/src/main/resources/config.properties'
+	  delete getListOfFolders('./', /server_.*/), 'common/src/main/resources/config.properties'
 	}
 }
