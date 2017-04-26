@@ -22,6 +22,7 @@ import java.security.SignedObject;
 import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
 import org.apache.commons.lang3.SerializationUtils;
@@ -30,16 +31,16 @@ public class PasswordManager implements Closeable {
 
     private KeyPair keyPair;
     private final HttpClient httpClient;
+    private final List<HttpClient> httpClients;
 
     private final Signature sha256WithRsa;
     private final Mac hmacSha256;
 
-    public PasswordManager(List<InetSocketAddress> servers) {
-        this(servers.get(0).getHostName(), servers.get(0).getPort());
-    }
+    public PasswordManager(List<InetSocketAddress> serverList) {
+        httpClients = serverList.stream().map(HttpClient::new).collect(Collectors.toList());
 
-    private PasswordManager(String host, int port) {
-        this.httpClient = new HttpClient(host, port);
+        // TODO: remove this
+        this.httpClient = httpClients.get(0);
 
         try {
             sha256WithRsa = Signature.getInstance("SHA256withRSA");

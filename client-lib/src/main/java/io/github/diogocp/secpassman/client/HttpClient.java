@@ -5,6 +5,7 @@ import com.mashape.unirest.http.Unirest;
 import com.mashape.unirest.http.exceptions.UnirestException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.InetSocketAddress;
 import java.security.SignedObject;
 import org.apache.commons.lang3.SerializationUtils;
 import org.slf4j.Logger;
@@ -15,6 +16,11 @@ class HttpClient {
     private static final Logger LOG = LoggerFactory.getLogger(HttpClient.class);
 
     private final String serverUrl;
+
+    HttpClient(InetSocketAddress serverAddress) {
+        serverUrl = String.format("http://%s:%d/secpassman",
+                serverAddress.getHostString(), serverAddress.getPort());
+    }
 
     HttpClient(String host, int port) {
         serverUrl = String.format("http://%s:%d/secpassman", host, port);
