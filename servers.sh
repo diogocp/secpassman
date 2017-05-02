@@ -15,7 +15,6 @@ function clean_up {
 }
 
 if [ $(($N + $LOWER_PORT)) -le "$UPPER_PORT" ]; then
-
     trap clean_up SIGTERM SIGINT
     for ((i=1; i<=$N; i++)); do
         port=$(($i+$LOWER_PORT))
@@ -34,7 +33,7 @@ if [ $(($N + $LOWER_PORT)) -le "$UPPER_PORT" ]; then
         cp -R "server/" "$DIRECTORY/server_$i/"
         cd "$DIRECTORY/server_$i"
         printf "$servers\n" > "config.properties"
-        echo "Starting server $i"
+        echo "\nStarting server $i"
         eval "build/install/server/bin/server $port &"
         echo "Process ID: $!"
         sleep 2
