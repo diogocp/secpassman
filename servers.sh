@@ -26,13 +26,12 @@ if [ $(($N + $LOWER_PORT)) -le "$UPPER_PORT" ]; then
     for ((i=1; i<=$N; i++)); do
         port=$(($i+$LOWER_PORT))
         cp -R "server/" "$DIRECTORY/server_$i/"
-        (
-            cd "$DIRECTORY/server_$i"
-            printf "$servers\n" > "config.properties"
-            echo "Starting server $i"
-            build/install/server/bin/server "$port"
-        ) &
+        cd "$DIRECTORY/server_$i"
+        printf "$servers\n" > "config.properties"
+        echo "Starting server $i"
+        eval $(build/install/server/bin/server "$port") &
         sleep 2
+        cd "../.."
     done
     echo "Ready"
     printf "$servers\n" > "config.properties"
