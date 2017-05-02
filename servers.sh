@@ -10,7 +10,13 @@ UPPER_PORT=65535
 servers="servers="
 DIRECTORY="servers.tmp"
 
+function clean_up {
+    pkill -f "secpassman.server.Main"
+}
+
 if [ $(($N + $LOWER_PORT)) -le "$UPPER_PORT" ]; then
+
+    trap clean_up SIGTERM SIGINT
     for ((i=1; i<=$N; i++)); do
         port=$(($i+$LOWER_PORT))
         if [ "$i" -lt "$N" ]; then
@@ -29,7 +35,8 @@ if [ $(($N + $LOWER_PORT)) -le "$UPPER_PORT" ]; then
         cd "$DIRECTORY/server_$i"
         printf "$servers\n" > "config.properties"
         echo "Starting server $i"
-        eval $(build/install/server/bin/server "$port") &
+        eval "build/install/server/bin/server $port &"
+        echo "Process ID: $!"
         sleep 2
         cd "../.."
     done
