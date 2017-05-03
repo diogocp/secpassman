@@ -6,8 +6,9 @@ Course project for *Highly Dependable Systems*, spring 2017 semester.
 Generate Servers
 -----
 ```sh
-sh servers.sh (number of fault servers)
+./start_servers F
 ```
+where F is the maximum number of faults that can be tolerated.
 
 Server
 ------

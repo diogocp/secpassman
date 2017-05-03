@@ -2,6 +2,12 @@
 
 # Maximum number of faults that can be tolerated
 F=$1
+
+if ! [ $F -gt 0 ] 2> /dev/null; then
+    echo -e "Usage: $0 F\n\tF  --  number of faults that can be tolerated"
+    exit 1
+fi
+
 # Total number of servers (n = 3f + 1)
 N=$((3 * $F + 1))
 
@@ -12,7 +18,7 @@ DIRECTORY="servers.tmp"
 
 
 function clean_up {
-    pkill -f "secpassman.server.Main"
+    pkill -f "io.github.diogocp.secpassman.server.Main"
 }
 
 
@@ -27,23 +33,27 @@ if [ $(($N + $LOWER_PORT)) -le "$UPPER_PORT" ]; then
         fi
     done
 
-    rm -rf "$DIRECTORY"
-    mkdir -p "$DIRECTORY"
-    rm -rf "certs"
+    rm -r "$DIRECTORY/"
+    mkdir "$DIRECTORY"
+    rm -r "certs/"
     mkdir "certs"
 
     for ((i=1; i<=$N; i++)); do
         port=$(($i+$LOWER_PORT))
-        cp -R "server/" "$DIRECTORY/server_$i/"
-        cd "$DIRECTORY/server_$i"
-        printf "$servers\n" > "config.properties"
-        keytool -genkey -alias server -dname "CN=server_$i, OU=IST, C=PT" -keyalg RSA -validity 365 -keystore server.jks -storepass server -keypass server
-        keytool -exportcert -alias server -rfc -file "../../certs/server_$i.pem" -keystore server.jks -storepass server -keypass server
-        echo "\nStarting server $i"
-        eval "build/install/server/bin/server $port &"
+
+        mkdir "$DIRECTORY/server_$i/"
+        pushd "$DIRECTORY/server_$i" > /dev/null
+
+        echo "$servers" > "config.properties"
+        keytool -genkey -alias server -dname "CN=server_$i" -keyalg RSA -keystore server.jks -storepass server -keypass server
+        keytool -exportcert -alias server -rfc -keystore server.jks -storepass server > "../../certs/server_$i.pem"
+
+        echo "Starting server $i"
+        ../../server/build/install/server/bin/server $port &
         echo "Process ID: $!"
-        sleep 2
-        cd "../.."
+
+        sleep 1
+        popd > /dev/null
     done
     echo "Ready"
     printf "$servers\n" > "config.properties"
