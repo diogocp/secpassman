@@ -64,7 +64,7 @@ class Broadcaster {
                         if (serverReplyMessage instanceof ServerReplyMessage) {
                             byte[] innerResponse = ((ServerReplyMessage) serverReplyMessage).response;
                             if (innerResponse != null) {
-                                responseQueue.add(Message.deserializeSignedMessage(innerResponse));
+                                responseQueue.add(serverReplyMessage);
                             } else {
                                 responseQueue.add(new NullMessage());
                             }
@@ -84,7 +84,7 @@ class Broadcaster {
         for (int i = 0; i < num_servers - max_failures; i++) {
             try {
                 final Message response = responseQueue.take();
-                if (response != null) {
+                if (response instanceof ServerReplyMessage) {
                     responses.add(response);
                 }
             } catch (InterruptedException e) {
