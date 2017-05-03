@@ -9,6 +9,6 @@ subprojects {
 
 task clean {
     doLast{
-        delete ('servers.tmp/', 'config.properties')
+        delete ('servers.tmp/', 'config.properties', 'certs/')
     }
 }
