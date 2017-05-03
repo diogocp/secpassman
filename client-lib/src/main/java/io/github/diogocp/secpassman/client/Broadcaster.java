@@ -57,8 +57,9 @@ class Broadcaster {
 
                         Message serverReplyMessage = Message.deserializeSignedMessage(response);
 
-                        // TODO verify publicKey
-                        //serverReplyMessage.publicKey
+                        if(!server.getValue().equals(serverReplyMessage.publicKey)) {
+                            throw new SignatureException("ServerReplyMessage not signed by the correct key");
+                        }
 
                         if (serverReplyMessage instanceof ServerReplyMessage) {
                             byte[] innerResponse = ((ServerReplyMessage) serverReplyMessage).response;
@@ -72,6 +73,7 @@ class Broadcaster {
                         }
                     } catch (IOException | ClassNotFoundException | SignatureException e) {
                         LOG.warn("Sending message failed", e);
+                        responseQueue.add(new NullMessage());
                     }
                 }))
                 .peek(Thread::start)
