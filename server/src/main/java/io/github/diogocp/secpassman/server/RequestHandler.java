@@ -140,18 +140,22 @@ class RequestHandler implements HttpHandler {
     }
 
     private void sendResponse(HttpExchange httpExchange, int status, byte[] response)
-            throws IOException, SignatureException, InvalidKeyException {
+            throws IOException {
 
         ServerReplyMessage res = new ServerReplyMessage(serverApi.keyPair.getPublic(), response);
-
-        SignedObject signedMessage = res.sign(serverApi.keyPair.getPrivate());
-        byte[] message = SerializationUtils.serialize(signedMessage);
-
-
+        try {
+            SignedObject signedMessage = res.sign(serverApi.keyPair.getPrivate());
+            byte[] message = SerializationUtils.serialize(signedMessage);
             httpExchange.sendResponseHeaders(status, message.length);
             try (OutputStream os = httpExchange.getResponseBody()) {
                 os.write(message);
             }
+        }
+        catch(SignatureException | InvalidKeyException e){
+            throw new RuntimeException(e);
+        }
+
+
 
     }
 }
