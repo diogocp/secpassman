@@ -7,7 +7,6 @@ import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.security.KeyPair;
 import java.security.KeyStore;
-import java.security.KeyStoreException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -25,7 +24,7 @@ public class Main {
             LOG.error("Error while loading key pair from keystore", e);
             return;
         }
-        final DataStore dataStore = new DataStore("data.ser");
+        final DataStore dataStore = new DataStore();
         final ServerApi serverApi = new ServerApi(keyPair, dataStore);
 
         int port;
