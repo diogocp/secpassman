@@ -5,6 +5,7 @@ import io.github.diogocp.secpassman.common.messages.GetMessage;
 import io.github.diogocp.secpassman.common.messages.Message;
 import io.github.diogocp.secpassman.common.messages.PutMessage;
 import io.github.diogocp.secpassman.common.messages.RegisterMessage;
+import io.github.diogocp.secpassman.common.messages.ServerReplyMessage;
 import io.github.diogocp.secpassman.common.messages.TimestampReplyMessage;
 import io.github.diogocp.secpassman.common.messages.TimestampRequestMessage;
 import java.io.ByteArrayOutputStream;
@@ -21,9 +22,9 @@ import java.security.SignatureException;
 import java.security.SignedObject;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Comparator;
 import java.util.List;
 import java.util.UUID;
-import java.util.stream.Collectors;
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
 import org.apache.commons.lang3.SerializationUtils;
@@ -34,18 +35,14 @@ public class PasswordManager implements Closeable {
 
     private static final Logger LOG = LoggerFactory.getLogger(PasswordManager.class);
 
-    private final List<HttpClient> servers;
-    private final int num_servers;
-    private final int max_failures;
+    private final Broadcaster broadcaster;
 
     private KeyPair keyPair;
     private final Signature sha256WithRsa;
     private final Mac hmacSha256;
 
     public PasswordManager(List<InetSocketAddress> serverList) {
-        servers = serverList.stream().map(HttpClient::new).collect(Collectors.toList());
-        num_servers = servers.size();
-        max_failures = (servers.size() - 1) / 3;
+        broadcaster = new Broadcaster(serverList);
 
         try {
             sha256WithRsa = Signature.getInstance("SHA256withRSA");
@@ -75,7 +72,7 @@ public class PasswordManager implements Closeable {
             throw new RuntimeException(e);
         }
 
-        broadcastMessage(signedMessage);
+        broadcaster.broadcastMessage(signedMessage);
     }
 
     public byte[] retrieve_password(byte[] domain, byte[] username)
@@ -86,17 +83,30 @@ public class PasswordManager implements Closeable {
         // Get a timestamp for this message
         message.timestamp = getTimestamp(message.uuid);
 
-        byte[] response = broadcastMessage(message.sign(keyPair.getPrivate()));
+        List<Message> responses = broadcaster.broadcastMessage(message.sign(keyPair.getPrivate()));
 
+        final List<Message> validResponses = new ArrayList<>();
+        for (Message response : responses) {
+            try {
+                Message responseMessage = Message
+                        .deserializeSignedMessage(((ServerReplyMessage) response).response);
+                if (keyPair.getPublic().equals(responseMessage.publicKey)) {
+                    validResponses.add(responseMessage);
+                } else {
+                    throw new SignatureException("Message not signed by us!");
+                }
+            } catch (IOException | ClassNotFoundException | SignatureException e) {
+                LOG.warn("Message verification failed", e);
+            }
+        }
+
+        // get highest timestamp
+        final Message responseMessage = getMessageWithMaxTimestamp(validResponses);
+/*
         if (response == null) {
             throw new ClassNotFoundException("Server returned an empty response");
         }
-
-        Message responseMessage = Message.deserializeSignedMessage(response);
-        if (!keyPair.getPublic().equals(responseMessage.publicKey)) {
-            throw new SignatureException("Server response is not signed by us");
-
-        }
+*/
         if (!(responseMessage instanceof PutMessage)) {
             throw new ClassNotFoundException("Server returned an invalid response");
         }
@@ -146,7 +156,7 @@ public class PasswordManager implements Closeable {
         // Get an auth token for this message, to prevent replay attacks
         message.timestamp = getTimestamp(message.uuid);
 
-        broadcastMessage(message.sign(keyPair.getPrivate()));
+        broadcaster.broadcastMessage(message.sign(keyPair.getPrivate()));
     }
 
     public void close() {
@@ -182,11 +192,11 @@ public class PasswordManager implements Closeable {
 
     public long getTimestamp(UUID messageId)
             throws InvalidKeyException, SignatureException, IOException, ClassNotFoundException {
-        TimestampRequestMessage message = new TimestampRequestMessage(keyPair.getPublic(), messageId);
+        TimestampRequestMessage message = new TimestampRequestMessage(keyPair.getPublic(),
+                messageId);
 
-        byte[] response = broadcastMessage(message.sign(keyPair.getPrivate()));
-
-        Message responseMessage = Message.deserializeSignedMessage(response);
+        List<Message> responses = broadcaster.broadcastMessage(message.sign(keyPair.getPrivate()));
+        Message responseMessage = getMessageWithMaxTimestamp(responses);
 
         if ((responseMessage instanceof TimestampReplyMessage)
                 && ((TimestampReplyMessage) responseMessage).messageId.equals(messageId)) {
@@ -195,34 +205,14 @@ public class PasswordManager implements Closeable {
         throw new ClassNotFoundException("Invalid timestamp response");
     }
 
-    private byte[] broadcastMessage(SignedObject message) throws IOException {
-        List<byte[]> responses = new ArrayList<>(num_servers);
-
-        for (int s = 0; s < num_servers; s++) {
-            try {
-                responses.add(servers.get(s).sendSignedMessage(message));
-            } catch (IOException e) {
-                LOG.warn("Sending message failed", e);
+    private Message getMessageWithMaxTimestamp(List<Message> responses) throws IOException {
+        return responses.stream().max((m1, m2) -> {
+            if (m1.timestamp > m2.timestamp) {
+                return 1;
+            } else if (m1.timestamp < m2.timestamp) {
+                return -1;
             }
-        }
-        return getQuorumReply(responses);
-    }
-
-    private byte[] getQuorumReply(List<byte[]> responses) throws IOException {
-        if (responses.size() < num_servers - max_failures) {
-            throw new IOException("Failed broadcast, not enough servers responded");
-        }
-
-        List<Long> confirmations = responses.stream()
-                .map(x -> responses.stream().filter(x::equals).count())
-                .collect(Collectors.toList());
-
-        for (int response = 0; response < responses.size(); response++) {
-            if (confirmations.get(response) > num_servers / 2) {
-                return responses.get(response);
-            }
-        }
-
-        throw new IOException("Failed broadcast, not enough confirmations");
+            return 0;
+        }).orElse(null);
     }
 }
