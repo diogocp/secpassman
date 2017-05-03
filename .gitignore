@@ -9,3 +9,4 @@ bin/
 *.ser
 /servers.tmp/
 /config.properties
+/certs/
