@@ -19,6 +19,7 @@ import java.security.NoSuchAlgorithmException;
 import java.security.Signature;
 import java.security.SignatureException;
 import java.security.SignedObject;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
@@ -195,22 +196,33 @@ public class PasswordManager implements Closeable {
     }
 
     private byte[] broadcastMessage(SignedObject message) throws IOException {
-        byte[][] response = new byte[num_servers][];
-        int num_failures = 0;
+        List<byte[]> responses = new ArrayList<>(num_servers);
 
         for (int s = 0; s < num_servers; s++) {
             try {
-                response[s] = servers.get(s).sendSignedMessage(message);
+                responses.add(servers.get(s).sendSignedMessage(message));
             } catch (IOException e) {
-                num_failures++;
                 LOG.warn("Sending message failed", e);
             }
         }
+        return getQuorumReply(responses);
+    }
 
-        if (num_failures <= max_failures) {
-            return response[0];
-        } else {
-            throw new IOException("Failed broadcast");
+    private byte[] getQuorumReply(List<byte[]> responses) throws IOException {
+        if (responses.size() < num_servers - max_failures) {
+            throw new IOException("Failed broadcast, not enough servers responded");
         }
+
+        List<Long> confirmations = responses.stream()
+                .map(x -> responses.stream().filter(x::equals).count())
+                .collect(Collectors.toList());
+
+        for (int response = 0; response < responses.size(); response++) {
+            if (confirmations.get(response) > num_servers / 2) {
+                return responses.get(response);
+            }
+        }
+
+        throw new IOException("Failed broadcast, not enough confirmations");
     }
 }
