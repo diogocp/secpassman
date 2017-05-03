@@ -85,13 +85,17 @@ public class PasswordManager implements Closeable {
 
         List<Message> responses = broadcaster.broadcastMessage(message.sign(keyPair.getPrivate()));
 
-        final List<Message> validResponses = new ArrayList<>();
-        for (Message response : responses) {
+        long max_timestamp = 0;
+        int max_timestamp_index = 0;
+        for (int i = 0; i < responses.size(); i++) {
             try {
                 Message responseMessage = Message
-                        .deserializeSignedMessage(((ServerReplyMessage) response).response);
+                        .deserializeSignedMessage(((ServerReplyMessage) responses.get(i)).response);
                 if (keyPair.getPublic().equals(responseMessage.publicKey)) {
-                    validResponses.add(responseMessage);
+                    if (responseMessage.timestamp > max_timestamp) {
+                        max_timestamp = responseMessage.timestamp;
+                        max_timestamp_index = i;
+                    }
                 } else {
                     throw new SignatureException("Message not signed by us!");
                 }
@@ -100,8 +104,10 @@ public class PasswordManager implements Closeable {
             }
         }
 
-        // get highest timestamp
-        final Message responseMessage = getMessageWithMaxTimestamp(validResponses);
+        byte[] msg = ((ServerReplyMessage) responses.get(max_timestamp_index)).msg;
+        Message responseMessage = Message.deserializeSignedMessage(msg);
+        broadcaster.broadcastMessage(SerializationUtils.deserialize(msg));
+
 /*
         if (response == null) {
             throw new ClassNotFoundException("Server returned an empty response");
