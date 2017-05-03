@@ -17,7 +17,9 @@ import java.security.*;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.UUID;
+import java.util.stream.Collectors;
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
 import org.apache.commons.lang3.SerializationUtils;
@@ -100,7 +102,12 @@ public class PasswordManager implements Closeable {
 
         byte[] msg = ((ServerReplyMessage) responses.get(max_timestamp_index)).response;
         Message responseMessage = Message.deserializeSignedMessage(msg);
-        broadcaster.broadcastMessage(SerializationUtils.deserialize(msg));
+        try {
+            broadcaster.broadcastMessage(SerializationUtils.deserialize(msg));
+        } catch (IOException e) {
+            LOG.error("Write back failed", e);
+            throw e;
+        }
 
 /*
         if (response == null) {
@@ -209,7 +216,20 @@ public class PasswordManager implements Closeable {
     }
 
     private Message getMessageWithMaxTimestamp(List<Message> responses) throws IOException {
-        Message max_message = responses.stream().max((m1, m2) -> {
+
+        List<Message> replies = responses.stream()
+                .filter(x -> x instanceof ServerReplyMessage)
+                .map(x -> {
+                    try {
+                        return Message.deserializeSignedMessage(((ServerReplyMessage) x).response);
+                    } catch (IOException | ClassNotFoundException | SignatureException e) {
+                        return null;
+                    }
+                })
+                .filter(Objects::nonNull)
+                .collect(Collectors.toList());
+
+        Message max_message = replies.stream().max((m1, m2) -> {
             if (m1.timestamp < m2.timestamp) {
                 return -1;
             } else if (m1.timestamp > m2.timestamp) {

@@ -25,7 +25,7 @@ class Broadcaster {
 
     private static final Logger LOG = LoggerFactory.getLogger(Broadcaster.class);
 
-    private final Map<HttpClient,PublicKey> servers;
+    private final Map<HttpClient, PublicKey> servers;
     private final int num_servers;
     private final int max_failures;
 
@@ -55,10 +55,15 @@ class Broadcaster {
                     try {
                         byte[] response = server.getKey().sendSignedMessage(message);
 
+                        if(response == null) {
+                            throw new IOException("Null response");
+                        }
+
                         Message serverReplyMessage = Message.deserializeSignedMessage(response);
 
-                        if(!server.getValue().equals(serverReplyMessage.publicKey)) {
-                            throw new SignatureException("ServerReplyMessage not signed by the correct key");
+                        if (!server.getValue().equals(serverReplyMessage.publicKey)) {
+                            throw new SignatureException(
+                                    "ServerReplyMessage not signed by the correct key");
                         }
 
                         if (serverReplyMessage instanceof ServerReplyMessage) {
@@ -83,10 +88,7 @@ class Broadcaster {
         LOG.debug("Waiting for responses");
         for (int i = 0; i < num_servers - max_failures; i++) {
             try {
-                final Message response = responseQueue.take();
-                if (response instanceof ServerReplyMessage) {
-                    responses.add(response);
-                }
+                responses.add(responseQueue.take());
             } catch (InterruptedException e) {
                 throw new IOException("Broadcast thread interrupted", e);
             }

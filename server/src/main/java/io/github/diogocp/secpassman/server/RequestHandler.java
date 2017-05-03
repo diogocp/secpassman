@@ -97,8 +97,8 @@ class RequestHandler implements HttpHandler {
         LOG.debug("Message has timestamp {}", message.timestamp);
 
         if (!user.verifyTimestamp(message.timestamp)) {
-            LOG.warn("(IGNORED) Request denied due to invalid timestamp");
-            sendResponse(httpExchange, 403, null);
+            LOG.warn("Ignored request with old timestamp");
+            sendResponse(httpExchange, 200, null);
             return;
         }
         LOG.debug("Timestamp verified");
