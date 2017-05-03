@@ -13,15 +13,10 @@ import java.io.Closeable;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
-import java.security.InvalidKeyException;
-import java.security.KeyPair;
-import java.security.KeyStore;
-import java.security.NoSuchAlgorithmException;
-import java.security.Signature;
-import java.security.SignatureException;
-import java.security.SignedObject;
+import java.security.*;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
@@ -39,7 +34,7 @@ public class PasswordManager implements Closeable {
     private final Signature sha256WithRsa;
     private final Mac hmacSha256;
 
-    public PasswordManager(List<InetSocketAddress> serverList) {
+    public PasswordManager(Map<InetSocketAddress, PublicKey> serverList) {
         broadcaster = new Broadcaster(serverList);
 
         try {

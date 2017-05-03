@@ -5,13 +5,19 @@ import static java.util.stream.Collectors.toList;
 import io.github.diogocp.secpassman.common.messages.Message;
 import io.github.diogocp.secpassman.common.messages.NullMessage;
 import io.github.diogocp.secpassman.common.messages.ServerReplyMessage;
+
 import java.io.IOException;
 import java.net.InetSocketAddress;
+import java.security.PublicKey;
 import java.security.SignatureException;
 import java.security.SignedObject;
+import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.stream.Collectors;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -19,12 +25,16 @@ class Broadcaster {
 
     private static final Logger LOG = LoggerFactory.getLogger(Broadcaster.class);
 
-    private final List<HttpClient> servers;
+    private final Map<HttpClient,PublicKey> servers;
     private final int num_servers;
     private final int max_failures;
 
-    Broadcaster(List<InetSocketAddress> serverList) {
-        servers = serverList.stream().map(HttpClient::new).collect(toList());
+    Broadcaster(Map<InetSocketAddress, PublicKey> serverList) {
+        servers = serverList.entrySet().stream()
+                .map(server -> new AbstractMap.SimpleEntry<>(
+                        new HttpClient(server.getKey()),
+                        server.getValue()))
+                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
         num_servers = servers.size();
         max_failures = (servers.size() - 1) / 3;
     }
@@ -40,10 +50,10 @@ class Broadcaster {
         final LinkedBlockingQueue<Message> responseQueue = new LinkedBlockingQueue<>();
 
         // Start a thread for each server to send the message
-        final List<Thread> threads = servers.stream()
+        final List<Thread> threads = servers.entrySet().stream()
                 .map(server -> new Thread(() -> {
                     try {
-                        byte[] response = server.sendSignedMessage(message);
+                        byte[] response = server.getKey().sendSignedMessage(message);
 
                         Message serverReplyMessage = Message.deserializeSignedMessage(response);
 

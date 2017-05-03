@@ -7,13 +7,16 @@ import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import io.github.diogocp.secpassman.common.messages.*;
 import io.github.diogocp.secpassman.server.exceptions.BadRequestException;
+
 import java.io.IOException;
 import java.io.OutputStream;
 import java.security.InvalidKeyException;
 import java.security.SignatureException;
+
 import org.apache.commons.lang3.SerializationUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
 import java.security.SignedObject;
 
 class RequestHandler implements HttpHandler {
@@ -150,11 +153,9 @@ class RequestHandler implements HttpHandler {
             try (OutputStream os = httpExchange.getResponseBody()) {
                 os.write(message);
             }
-        }
-        catch(SignatureException | InvalidKeyException e){
+        } catch (SignatureException | InvalidKeyException e) {
             throw new RuntimeException(e);
         }
-
 
 
     }

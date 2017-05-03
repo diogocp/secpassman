@@ -4,9 +4,8 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.InetSocketAddress;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Properties;
+import java.security.PublicKey;
+import java.util.*;
 
 public class Config {
 
@@ -50,5 +49,16 @@ public class Config {
 
     public List<InetSocketAddress> getServers() {
         return servers;
+    }
+
+    public Map<InetSocketAddress, PublicKey> getServerswithPKey() throws IOException {
+        Map<InetSocketAddress, PublicKey> serverKeys = new HashMap<>();
+
+        List<PublicKey> keys = KeyStoreUtils.loadCertificates("certs");
+        for (int i = 0; i < getServers().size(); i++) {
+            serverKeys.put(servers.get(i), keys.get(i));
+        }
+
+        return serverKeys;
     }
 }

@@ -66,7 +66,7 @@ public class Main {
             return;
         }
 
-        try (PasswordManager manager = new PasswordManager(config.getServers())) {
+        try (PasswordManager manager = new PasswordManager(config.getServerswithPKey())) {
             // Client API initialization
 
             manager.init(keyStore, "client",cmdMain.getKeystorePassword());
