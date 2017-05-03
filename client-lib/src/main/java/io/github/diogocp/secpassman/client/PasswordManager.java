@@ -20,9 +20,7 @@ import java.security.NoSuchAlgorithmException;
 import java.security.Signature;
 import java.security.SignatureException;
 import java.security.SignedObject;
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Comparator;
 import java.util.List;
 import java.util.UUID;
 import javax.crypto.Mac;
@@ -81,6 +79,7 @@ public class PasswordManager implements Closeable {
                 getHmac(username, "username"));
 
         // Get a timestamp for this message
+        LOG.debug("Getting timestamp for GET request");
         message.timestamp = getTimestamp(message.uuid);
 
         List<Message> responses = broadcaster.broadcastMessage(message.sign(keyPair.getPrivate()));
@@ -104,7 +103,7 @@ public class PasswordManager implements Closeable {
             }
         }
 
-        byte[] msg = ((ServerReplyMessage) responses.get(max_timestamp_index)).msg;
+        byte[] msg = ((ServerReplyMessage) responses.get(max_timestamp_index)).response;
         Message responseMessage = Message.deserializeSignedMessage(msg);
         broadcaster.broadcastMessage(SerializationUtils.deserialize(msg));
 
@@ -160,8 +159,10 @@ public class PasswordManager implements Closeable {
                 getHmac(username, "username"), SerializationUtils.serialize(sealedRecord));
 
         // Get an auth token for this message, to prevent replay attacks
+        LOG.debug("Getting timestamp for PUT request");
         message.timestamp = getTimestamp(message.uuid);
 
+        LOG.debug("Broadcasting PUT request");
         broadcaster.broadcastMessage(message.sign(keyPair.getPrivate()));
     }
 
@@ -201,24 +202,30 @@ public class PasswordManager implements Closeable {
         TimestampRequestMessage message = new TimestampRequestMessage(keyPair.getPublic(),
                 messageId);
 
+        LOG.debug("Broadcasting timestamp request");
         List<Message> responses = broadcaster.broadcastMessage(message.sign(keyPair.getPrivate()));
         Message responseMessage = getMessageWithMaxTimestamp(responses);
 
-        if ((responseMessage instanceof TimestampReplyMessage)
-                && ((TimestampReplyMessage) responseMessage).messageId.equals(messageId)) {
+        if (responseMessage instanceof TimestampReplyMessage) {
             return ((TimestampReplyMessage) responseMessage).timestamp;
         }
+
         throw new ClassNotFoundException("Invalid timestamp response");
     }
 
     private Message getMessageWithMaxTimestamp(List<Message> responses) throws IOException {
-        return responses.stream().max((m1, m2) -> {
-            if (m1.timestamp > m2.timestamp) {
-                return 1;
-            } else if (m1.timestamp < m2.timestamp) {
+        Message max_message = responses.stream().max((m1, m2) -> {
+            if (m1.timestamp < m2.timestamp) {
                 return -1;
+            } else if (m1.timestamp > m2.timestamp) {
+                return 1;
             }
             return 0;
         }).orElse(null);
+
+        if (max_message == null) {
+            throw new RuntimeException("getMessageWithMaxTimestamp null");
+        }
+        return max_message;
     }
 }

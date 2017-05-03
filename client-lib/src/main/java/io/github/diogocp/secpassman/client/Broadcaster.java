@@ -3,6 +3,8 @@ package io.github.diogocp.secpassman.client;
 import static java.util.stream.Collectors.toList;
 
 import io.github.diogocp.secpassman.common.messages.Message;
+import io.github.diogocp.secpassman.common.messages.NullMessage;
+import io.github.diogocp.secpassman.common.messages.ServerReplyMessage;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.security.SignatureException;
@@ -42,31 +44,47 @@ class Broadcaster {
                 .map(server -> new Thread(() -> {
                     try {
                         byte[] response = server.sendSignedMessage(message);
-                        responseQueue.add(Message.deserializeSignedMessage(response));
+
+                        Message serverReplyMessage = Message.deserializeSignedMessage(response);
+
+                        // TODO verify publicKey
+                        //serverReplyMessage.publicKey
+
+                        if (serverReplyMessage instanceof ServerReplyMessage) {
+                            byte[] innerResponse = ((ServerReplyMessage) serverReplyMessage).response;
+                            if (innerResponse != null) {
+                                responseQueue.add(Message.deserializeSignedMessage(innerResponse));
+                            } else {
+                                responseQueue.add(new NullMessage());
+                            }
+                        } else {
+                            throw new ClassNotFoundException("Not instance of ServerReplyMessage");
+                        }
                     } catch (IOException | ClassNotFoundException | SignatureException e) {
                         LOG.warn("Sending message failed", e);
-                        responseQueue.add(null);
                     }
                 }))
                 .peek(Thread::start)
                 .collect(toList());
 
         // Wait for N-f responses
-        for(int i = 0; i < num_servers - max_failures; i++) {
+        LOG.debug("Waiting for responses");
+        for (int i = 0; i < num_servers - max_failures; i++) {
             try {
                 final Message response = responseQueue.take();
                 if (response != null) {
                     responses.add(response);
                 }
             } catch (InterruptedException e) {
-                LOG.warn("Broadcast thread interrupted", e);
+                throw new IOException("Broadcast thread interrupted", e);
             }
         }
 
         // Interrupt remaining threads
+        LOG.debug("Interrupting remaining threads");
         threads.forEach(Thread::interrupt);
 
-        if(responses.size() >= num_servers - max_failures) {
+        if (responses.size() >= num_servers - max_failures) {
             return responses;
         } else {
             throw new IOException("Broadcast failed");
