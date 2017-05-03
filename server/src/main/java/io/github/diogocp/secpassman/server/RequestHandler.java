@@ -5,12 +5,7 @@ import static org.apache.commons.lang3.ArrayUtils.EMPTY_BYTE_ARRAY;
 import com.google.common.io.ByteStreams;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
-import io.github.diogocp.secpassman.common.messages.GetMessage;
-import io.github.diogocp.secpassman.common.messages.Message;
-import io.github.diogocp.secpassman.common.messages.PutMessage;
-import io.github.diogocp.secpassman.common.messages.RegisterMessage;
-import io.github.diogocp.secpassman.common.messages.TimestampReplyMessage;
-import io.github.diogocp.secpassman.common.messages.TimestampRequestMessage;
+import io.github.diogocp.secpassman.common.messages.*;
 import io.github.diogocp.secpassman.server.exceptions.BadRequestException;
 import java.io.IOException;
 import java.io.OutputStream;
@@ -19,6 +14,7 @@ import java.security.SignatureException;
 import org.apache.commons.lang3.SerializationUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import java.security.SignedObject;
 
 class RequestHandler implements HttpHandler {
 
@@ -144,17 +140,18 @@ class RequestHandler implements HttpHandler {
     }
 
     private void sendResponse(HttpExchange httpExchange, int status, byte[] response)
-            throws IOException {
-        if (response == null) {
-            httpExchange.sendResponseHeaders(status, 0);
+            throws IOException, SignatureException, InvalidKeyException {
+
+        ServerReplyMessage res = new ServerReplyMessage(serverApi.keyPair.getPublic(), response);
+
+        SignedObject signedMessage = res.sign(serverApi.keyPair.getPrivate());
+        byte[] message = SerializationUtils.serialize(signedMessage);
+
+
+            httpExchange.sendResponseHeaders(status, message.length);
             try (OutputStream os = httpExchange.getResponseBody()) {
-                os.write(EMPTY_BYTE_ARRAY);
+                os.write(message);
             }
-        } else {
-            httpExchange.sendResponseHeaders(status, response.length);
-            try (OutputStream os = httpExchange.getResponseBody()) {
-                os.write(response);
-            }
-        }
+
     }
 }
