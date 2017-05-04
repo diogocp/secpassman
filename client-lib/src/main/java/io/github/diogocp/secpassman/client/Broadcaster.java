@@ -77,7 +77,7 @@ class Broadcaster {
                             throw new ClassNotFoundException("Not instance of ServerReplyMessage");
                         }
                     } catch (IOException | ClassNotFoundException | SignatureException e) {
-                        LOG.warn("Sending message failed");
+                        LOG.warn("Sending message failed", e);
                         responseQueue.add(new NullMessage());
                     }
                 }))
