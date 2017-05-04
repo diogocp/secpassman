@@ -3,28 +3,26 @@ Dependable Password Manager
 
 Course project for *Highly Dependable Systems*, spring 2017 semester.
 
-Generate Servers
------
+Build Distribution
+------------------
+```sh
+./gradlew installDist
+```
+
+Generate and start servers
+--------------------------
 ```sh
 ./start_servers F
 ```
 where F is the maximum number of faults that can be tolerated.
 
-Server
-------
-
-```sh
-./gradlew :server:run
-```
-
-The server listens on port 4567 by default.
+Minimum 1
 
 
 Client
 ------
 
 ```sh
-./gradlew :client-app:installDist
 client-app/build/install/client-app/bin/client-app (register|add|get) [DOMAIN USERNAME]
 ```
 
