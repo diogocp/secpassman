@@ -2,6 +2,7 @@ package io.github.diogocp.secpassman.client;
 
 import static java.util.stream.Collectors.toList;
 
+import io.github.diogocp.secpassman.common.messages.FailureMessage;
 import io.github.diogocp.secpassman.common.messages.Message;
 import io.github.diogocp.secpassman.common.messages.NullMessage;
 import io.github.diogocp.secpassman.common.messages.ServerReplyMessage;
@@ -77,8 +78,8 @@ class Broadcaster {
                             throw new ClassNotFoundException("Not instance of ServerReplyMessage");
                         }
                     } catch (IOException | ClassNotFoundException | SignatureException e) {
-                        LOG.warn("Sending message failed", e);
-                        responseQueue.add(new NullMessage());
+                        LOG.debug("Sending message failed", e);
+                        responseQueue.add(new FailureMessage());
                     }
                 }))
                 .peek(Thread::start)
@@ -86,11 +87,21 @@ class Broadcaster {
 
         // Wait for N-f responses
         LOG.debug("Waiting for responses");
+        int failures = 0;
         for (int i = 0; i < num_servers - max_failures; i++) {
+            final Message response;
             try {
-                responses.add(responseQueue.take());
+                response = responseQueue.take();
             } catch (InterruptedException e) {
                 throw new IOException("Broadcast thread interrupted", e);
+            }
+
+            if (response instanceof FailureMessage) {
+                if (++failures > max_failures) {
+                    throw new IOException("Broadcast failed, too many failures");
+                }
+            } else {
+                responses.add(response);
             }
         }
 
@@ -98,10 +109,6 @@ class Broadcaster {
         LOG.debug("Interrupting remaining threads");
         threads.forEach(Thread::interrupt);
 
-        if (responses.size() >= num_servers - max_failures) {
-            return responses;
-        } else {
-            throw new IOException("Broadcast failed");
-        }
+        return responses;
     }
 }
