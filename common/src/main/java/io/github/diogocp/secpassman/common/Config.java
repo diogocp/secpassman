@@ -54,7 +54,7 @@ public class Config {
     public Map<InetSocketAddress, PublicKey> getServerswithPKey() throws IOException {
         Map<InetSocketAddress, PublicKey> serverKeys = new HashMap<>();
 
-        List<PublicKey> keys = KeyStoreUtils.loadCertificates("certs");
+        List<PublicKey> keys = KeyStoreUtils.loadCertificates("servers.tmp/certs");
         for (int i = 0; i < getServers().size(); i++) {
             serverKeys.put(servers.get(i), keys.get(i));
         }

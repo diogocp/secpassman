@@ -35,8 +35,7 @@ if [ $(($N + $LOWER_PORT)) -le "$UPPER_PORT" ]; then
 
     rm -r "$DIRECTORY/"
     mkdir "$DIRECTORY"
-    rm -r "certs/"
-    mkdir "certs"
+    mkdir "$DIRECTORY/certs"
 
     for ((i=1; i<=$N; i++)); do
         port=$(($i+$LOWER_PORT))
@@ -46,7 +45,7 @@ if [ $(($N + $LOWER_PORT)) -le "$UPPER_PORT" ]; then
 
         echo "$servers" > "config.properties"
         keytool -genkey -alias server -dname "CN=server_$i" -keyalg RSA -keystore server.jks -storepass server -keypass server
-        keytool -exportcert -alias server -rfc -keystore server.jks -storepass server > "../../certs/server_$i.pem"
+        keytool -exportcert -alias server -rfc -keystore server.jks -storepass server > "../certs/server_$i.pem"
 
         echo "Starting server $i"
         ../../server/build/install/server/bin/server $port &
