@@ -3,6 +3,7 @@ package io.github.diogocp.secpassman.client;
 import io.github.diogocp.secpassman.common.KeyStoreUtils;
 import io.github.diogocp.secpassman.common.messages.GetMessage;
 import io.github.diogocp.secpassman.common.messages.Message;
+import io.github.diogocp.secpassman.common.messages.NullMessage;
 import io.github.diogocp.secpassman.common.messages.PutMessage;
 import io.github.diogocp.secpassman.common.messages.RegisterMessage;
 import io.github.diogocp.secpassman.common.messages.ServerReplyMessage;
@@ -85,13 +86,20 @@ public class PasswordManager implements Closeable {
         int max_timestamp_index = 0;
         for (int i = 0; i < responses.size(); i++) {
             try {
-                Message responseMessage = Message
-                        .deserializeSignedMessage(((ServerReplyMessage) responses.get(i)).response);
-                if (keyPair.getPublic().equals(responseMessage.publicKey)) {
-                    if (responseMessage.timestamp > max_timestamp) {
-                        max_timestamp = responseMessage.timestamp;
+                final Message response = responses.get(i);
+                if (response instanceof NullMessage) {
+                    continue;
+                }
+
+                Message innerMessage =
+                        Message.deserializeSignedMessage(((ServerReplyMessage) response).response);
+
+                if (keyPair.getPublic().equals(innerMessage.publicKey)) {
+                    if (innerMessage.timestamp > max_timestamp) {
+                        max_timestamp = innerMessage.timestamp;
                         max_timestamp_index = i;
                     }
+
                 } else {
                     throw new SignatureException("Message not signed by us!");
                 }
@@ -100,8 +108,13 @@ public class PasswordManager implements Closeable {
             }
         }
 
-        byte[] msg = ((ServerReplyMessage) responses.get(max_timestamp_index)).response;
-        Message responseMessage = Message.deserializeSignedMessage(msg);
+        final Message mostRecentMessage = responses.get(max_timestamp_index);
+        if (mostRecentMessage instanceof NullMessage) {
+            throw new ClassNotFoundException("Server returned an empty response");
+        }
+
+        final byte[] msg = ((ServerReplyMessage) mostRecentMessage).response;
+        final Message responseMessage = Message.deserializeSignedMessage(msg);
         try {
             broadcaster.broadcastMessage(SerializationUtils.deserialize(msg));
         } catch (IOException e) {
@@ -109,11 +122,6 @@ public class PasswordManager implements Closeable {
             throw e;
         }
 
-/*
-        if (response == null) {
-            throw new ClassNotFoundException("Server returned an empty response");
-        }
-*/
         if (!(responseMessage instanceof PutMessage)) {
             throw new ClassNotFoundException("Server returned an invalid response");
         }
