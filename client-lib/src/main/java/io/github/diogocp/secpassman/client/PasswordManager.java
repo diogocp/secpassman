@@ -79,7 +79,9 @@ public class PasswordManager implements Closeable {
         LOG.debug("Getting timestamp for GET request");
         message.timestamp = getTimestamp(message.uuid);
 
-        List<Message> responses = broadcaster.broadcastMessage(message.sign(keyPair.getPrivate()));
+        List<Message> responses = broadcaster.broadcastMessage(message.sign(keyPair.getPrivate())).stream()
+                .filter(x -> x instanceof ServerReplyMessage)
+                .filter(Objects::nonNull).collect(Collectors.toList());
 
         long max_timestamp = 0;
         int max_timestamp_index = 0;
