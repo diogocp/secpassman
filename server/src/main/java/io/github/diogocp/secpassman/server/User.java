@@ -35,10 +35,10 @@ class User implements Serializable {
     }
 
     long getTimestamp() {
-        return timestamp.incrementAndGet();
+        return timestamp.get();
     }
 
     boolean verifyTimestamp(long timestamp) {
-        return timestamp == this.timestamp.get();
+        return this.timestamp.compareAndSet(timestamp, timestamp + 1);
     }
 }
