@@ -1,15 +1,15 @@
 package io.github.diogocp.secpassman.server;
 
 import java.security.PublicKey;
-import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 class DataStore {
 
     private final Map<PublicKey, User> users;
 
     DataStore() {
-        users = new HashMap<>();
+        users = new ConcurrentHashMap<>();
     }
 
     boolean containsUser(PublicKey publicKey) {
