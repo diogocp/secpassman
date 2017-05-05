@@ -16,11 +16,12 @@ public class GetTest {
     private Config config;
     private KeyStore keyStore;
 
-    public GetTest() throws KeyStoreException, IOException {
+    public GetTest() throws KeyStoreException, IOException, InvalidKeyException {
         config = new Config("config.properties");
         keyStore = KeyStoreUtils.loadKeyStore("secpassman.jks", "jkspass");
         manager = new PasswordManager(config.getServerswithPKey());
         manager.init(keyStore, "client", "jkspass");
+        manager.register_user();
     }
 
     @Test
@@ -50,9 +51,5 @@ public class GetTest {
         Assert.assertEquals(password, password2);
     }
 
-    @Test
-    public void noAuthKeyTest() {
-        //GetMessage message = new GetMessage(keyPair.getPublic(), getHmac(domain, "domain"),
-          //      getHmac(username, "username"));
-    }
+
 }
