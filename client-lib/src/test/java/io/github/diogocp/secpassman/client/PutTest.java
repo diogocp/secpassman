@@ -60,8 +60,8 @@ public class PutTest {
     }
 
     @Test
-    public void noAuthKeyTest() throws IOException, KeyStoreException {
-        KeyPair client2 = KeyStoreUtils.loadKeyPair(KeyStoreUtils.loadKeyStore("xpto.jks","passxpto"),);
+    public void noAuthKeyTest() throws IOException, KeyStoreException, UnrecoverableKeyException, InvalidKeyException, NoSuchAlgorithmException {
+        KeyPair client2 = KeyStoreUtils.loadKeyPair(KeyStoreUtils.loadKeyStore("xpto.jks","passxpto"),"client","passxpto");
         String domain = "tecnico.ulisboa.pt";
         String username = "client5";
         String password = "password";
@@ -82,14 +82,16 @@ public class PutTest {
                 manager.getHmac(username.getBytes(StandardCharsets.UTF_8), "username"),
                 SerializationUtils.serialize(sealedRecord));
 
-        message.timestamp = manager.getTimestamp(message.uuid);
-        broadcaster.broadcastMessage(new SignedObject(message.sign());
-        HttpResponse response;
         try {
+
+            message.timestamp = manager.getTimestamp(message.uuid);
+            broadcaster.broadcastMessage(message.sign(client2.getPrivate()));
+            HttpResponse response;
+
             response = Unirest.post(String.format("http://%s:%d/secpassman", "localhost", 4567))
                     .body(SerializationUtils.serialize(message))
                     .asString();
-        } catch (UnirestException e) {
+        } catch (ClassNotFoundException | SignatureException | UnirestException e) {
 
         }
     }
