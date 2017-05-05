@@ -93,17 +93,15 @@ class RequestHandler implements HttpHandler {
             return;
         }
 
-        // All other requests need to provide a timestamp
-        LOG.debug("Message has timestamp {}", message.timestamp);
-
-        if (!user.verifyTimestamp(message.timestamp)) {
-            LOG.debug("Ignored request with old timestamp");
-            sendResponse(httpExchange, 200, null);
-            return;
-        }
-        LOG.debug("Timestamp verified");
-
         if (message instanceof PutMessage) {
+            LOG.debug("Message has timestamp {}", message.timestamp);
+
+            if (!user.verifyTimestamp(message.timestamp)) {
+                LOG.debug("Ignored request with old timestamp");
+                sendResponse(httpExchange, 200, null);
+                return;
+            }
+
             LOG.debug("Handling put request");
             handlePut((PutMessage) message, messageBytes);
             sendResponse(httpExchange, 200, null);

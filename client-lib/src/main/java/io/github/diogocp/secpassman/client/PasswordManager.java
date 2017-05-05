@@ -76,10 +76,6 @@ public class PasswordManager implements Closeable {
         final GetMessage message = new GetMessage(keyPair.getPublic(), getHmac(domain, "domain"),
                 getHmac(username, "username"));
 
-        // Get a timestamp for this message
-        LOG.debug("Getting timestamp for GET request");
-        message.timestamp = getTimestamp(message.uuid);
-
         List<Message> responses = broadcaster.broadcastMessage(message.sign(keyPair.getPrivate()));
 
         long max_timestamp = 0;
