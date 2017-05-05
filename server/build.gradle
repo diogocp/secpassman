@@ -26,9 +26,9 @@ import com.wiredforcode.gradle.spawn.*
 
 apply plugin: 'com.wiredforcode.spawn'
 
-task startServer(type: SpawnProcessTask) {
-    command './gradlew :server:run'
-    ready 'io.github.diogocp.secpassman.server.Main - Starting server'
+task startServersAsync(type: SpawnProcessTask) {
+    command './start_servers 1'
+    ready 'All servers start, ready!'
 }
 
-task stopServer(type: KillProcessTask)
+task stopServers(type: KillProcessTask)
