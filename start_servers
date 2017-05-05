@@ -54,7 +54,7 @@ if [ $(($N + $LOWER_PORT)) -le "$UPPER_PORT" ]; then
         sleep 1
         popd > /dev/null
     done
-    echo "All servers start, ready!"
+    echo "All servers started, ready!"
     printf "$servers\n" > "config.properties"
     wait
 else
