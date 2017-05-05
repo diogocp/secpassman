@@ -12,6 +12,7 @@ import org.junit.Assert;
 import org.junit.Test;
 
 public class GetTest {
+
     private PasswordManager manager;
     private Config config;
     private KeyStore keyStore;
@@ -25,31 +26,20 @@ public class GetTest {
     }
 
     @Test
-    public void success() {
+    public void success()
+            throws IOException, InvalidKeyException, SignatureException, ClassNotFoundException {
         String domain = "tecnico.ulisboa.pt";
         String username = "client4";
-        String password = "password";
-        try {
-            manager.save_password(domain.getBytes(StandardCharsets.UTF_8),
-                    username.getBytes(StandardCharsets.UTF_8),
-                    password.getBytes(StandardCharsets.UTF_8));
-        } catch (InvalidKeyException | IOException | SignatureException | ClassNotFoundException e) {
-            e.printStackTrace();
-        }
+        String password = "password123!";
 
-        String wrong = "wrongpassword";
+        manager.save_password(domain.getBytes(StandardCharsets.UTF_8),
+                username.getBytes(StandardCharsets.UTF_8),
+                password.getBytes(StandardCharsets.UTF_8));
 
-        byte[] passwordRetrieved = wrong.getBytes();
-        try {
-            passwordRetrieved = manager.retrieve_password(domain.getBytes(StandardCharsets.UTF_8),
-                    username.getBytes(StandardCharsets.UTF_8));
-        } catch (IOException | InvalidKeyException | SignatureException | ClassNotFoundException e) {
-            e.printStackTrace();
-        }
+        byte[] passwordRetrieved =
+                manager.retrieve_password(domain.getBytes(StandardCharsets.UTF_8),
+                        username.getBytes(StandardCharsets.UTF_8));
 
-        String password2 = new String(passwordRetrieved);
-        Assert.assertEquals(password, password2);
+        Assert.assertEquals(password, new String(passwordRetrieved, StandardCharsets.UTF_8));
     }
-
-
 }
