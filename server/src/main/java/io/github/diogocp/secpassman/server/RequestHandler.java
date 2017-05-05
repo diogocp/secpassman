@@ -34,7 +34,7 @@ class RequestHandler implements HttpHandler {
 
     @Override
     public void handle(HttpExchange httpExchange) throws IOException {
-        LOG.info("Got a request from {}", httpExchange.getRemoteAddress());
+        LOG.debug("Got a request from {}", httpExchange.getRemoteAddress().getHostString());
 
         byte[] messageBytes;
         Message message;
@@ -97,7 +97,7 @@ class RequestHandler implements HttpHandler {
         LOG.debug("Message has timestamp {}", message.timestamp);
 
         if (!user.verifyTimestamp(message.timestamp)) {
-            LOG.warn("Ignored request with old timestamp");
+            LOG.debug("Ignored request with old timestamp");
             sendResponse(httpExchange, 200, null);
             return;
         }
