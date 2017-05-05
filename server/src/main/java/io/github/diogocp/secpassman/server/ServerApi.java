@@ -14,10 +14,6 @@ class ServerApi {
     }
 
     void register(PublicKey publicKey) {
-        if (dataStore.containsUser(publicKey)) {
-            throw new IllegalArgumentException("Already registered");
-        }
-
         dataStore.registerUser(publicKey);
     }
 

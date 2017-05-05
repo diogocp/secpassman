@@ -12,12 +12,8 @@ class DataStore {
         users = new ConcurrentHashMap<>();
     }
 
-    boolean containsUser(PublicKey publicKey) {
-        return users.containsKey(publicKey);
-    }
-
     void registerUser(PublicKey publicKey) {
-        users.put(publicKey, new User(publicKey));
+        users.putIfAbsent(publicKey, new User(publicKey));
     }
 
     User getUser(PublicKey publicKey) {
