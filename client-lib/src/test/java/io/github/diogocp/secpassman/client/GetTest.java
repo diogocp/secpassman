@@ -18,7 +18,7 @@ public class GetTest {
 
     public GetTest() throws KeyStoreException, IOException {
         config = new Config("config.properties");
-        keyStore = KeyStoreUtils.loadKeyStore("../secpassman.jks", "jkspass");
+        keyStore = KeyStoreUtils.loadKeyStore("secpassman.jks", "jkspass");
         manager = new PasswordManager(config.getServerswithPKey());
         manager.init(keyStore, "client", "jkspass");
     }
