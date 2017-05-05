@@ -83,8 +83,12 @@ public class PasswordManager implements Closeable {
         for (int i = 0; i < responses.size(); i++) {
             try {
                 final Message response = responses.get(i);
-                if (response instanceof NullMessage) {
+                if (!(response instanceof ServerReplyMessage)) {
                     continue;
+                }
+
+                if (!message.uuid.equals(((ServerReplyMessage) response).reply_to)) {
+                    throw new SignatureException("Wrong reply-to ID, possible replay attack");
                 }
 
                 Message innerMessage =
@@ -95,7 +99,6 @@ public class PasswordManager implements Closeable {
                         max_timestamp = innerMessage.timestamp;
                         max_timestamp_index = i;
                     }
-
                 } else {
                     throw new SignatureException("Message not signed by us!");
                 }

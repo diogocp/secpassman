@@ -13,6 +13,7 @@ import java.io.OutputStream;
 import java.security.InvalidKeyException;
 import java.security.SignatureException;
 
+import java.util.UUID;
 import org.apache.commons.lang3.SerializationUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -108,7 +109,7 @@ class RequestHandler implements HttpHandler {
         } else if (message instanceof GetMessage) {
             LOG.debug("Handling get request");
             byte[] password = handleGet((GetMessage) message);
-            sendResponse(httpExchange, 200, password);
+            sendResponse(httpExchange, 200, password, message.uuid);
         } else {
             sendResponse(httpExchange, 400, null);
         }
@@ -140,10 +141,12 @@ class RequestHandler implements HttpHandler {
         return serverApi.get(message.publicKey, message.domain, message.username);
     }
 
-    private void sendResponse(HttpExchange httpExchange, int status, byte[] response)
+    private void sendResponse(HttpExchange httpExchange, int status, byte[] response, UUID mid)
             throws IOException {
 
-        ServerReplyMessage res = new ServerReplyMessage(serverApi.keyPair.getPublic(), response);
+        ServerReplyMessage res =
+                new ServerReplyMessage(serverApi.keyPair.getPublic(), response, mid);
+
         try {
             SignedObject signedMessage = res.sign(serverApi.keyPair.getPrivate());
             byte[] message = SerializationUtils.serialize(signedMessage);
@@ -154,7 +157,10 @@ class RequestHandler implements HttpHandler {
         } catch (SignatureException | InvalidKeyException e) {
             throw new RuntimeException(e);
         }
+    }
 
-
+    private void sendResponse(HttpExchange httpExchange, int status, byte[] response)
+            throws IOException {
+        sendResponse(httpExchange, status, response, null);
     }
 }
