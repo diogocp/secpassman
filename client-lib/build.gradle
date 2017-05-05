@@ -14,5 +14,5 @@ dependencies {
     testCompile group: 'junit', name: 'junit', version: '4.12'
 }
 
-test.dependsOn(":server:startServer")
-test.finalizedBy(":server:stopServer")
+test.dependsOn(":server:startServersAsync")
+test.finalizedBy(":server:stopServersAsync")

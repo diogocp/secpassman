@@ -28,7 +28,9 @@ apply plugin: 'com.wiredforcode.spawn'
 
 task startServersAsync(type: SpawnProcessTask) {
     command './start_servers 1'
-    ready 'All servers start, ready!'
+    ready 'All servers started, ready!'
 }
 
-task stopServers(type: KillProcessTask)
+task stopServersAsync(type: KillProcessTask)
+
+startServersAsync.dependsOn(":server:installDist")
