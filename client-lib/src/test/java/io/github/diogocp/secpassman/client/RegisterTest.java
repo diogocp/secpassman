@@ -25,18 +25,10 @@ public class RegisterTest {
     private Config config;
     private KeyStore keyStore;
 
-    public RegisterTest() {
-
+    public RegisterTest() throws KeyStoreException, IOException {
         config = new Config("config.properties");
-
-        try {
-            keyStore = KeyStoreUtils.loadKeyStore("../secpassman.jks", "jkspass");
-            keyPair = KeyStoreUtils.loadKeyPair(keyStore, "client", "jkspass");
-        } catch (KeyStoreException | IOException | NoSuchAlgorithmException | UnrecoverableKeyException | InvalidKeyException e) {
-            System.err.println(e.getMessage());
-            throw new RuntimeException(e);
-        }
-        manager = new PasswordManager(config.getHost(), config.getPort());
+        keyStore = KeyStoreUtils.loadKeyStore("../secpassman.jks", "jkspass");
+        manager = new PasswordManager(config.getServerswithPKey());
         manager.init(keyStore, "client", "jkspass");
     }
 
@@ -49,7 +41,7 @@ public class RegisterTest {
             throw new RuntimeException(e);
         }
     }
-
+/*
     @Test
     public void RegisterWithRandomPrivateKeyTest() throws Exception {
         //signed incorrectly
@@ -132,4 +124,5 @@ public class RegisterTest {
 
         }
     }
+    */
 }

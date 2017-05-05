@@ -27,18 +27,10 @@ public class PutTest {
     private Config config;
     private KeyStore keyStore;
 
-    public PutTest() {
-
+    public PutTest() throws KeyStoreException, IOException {
         config = new Config("config.properties");
-
-        try {
-            keyStore = KeyStoreUtils.loadKeyStore("../secpassman.jks", "jkspass");
-            keyPair = KeyStoreUtils.loadKeyPair(keyStore, "client", "jkspass");
-        } catch (KeyStoreException | IOException | NoSuchAlgorithmException | UnrecoverableKeyException | InvalidKeyException e) {
-            System.err.println(e.getMessage());
-            throw new RuntimeException(e);
-        }
-        manager = new PasswordManager(config.getHost(), config.getPort());
+        keyStore = KeyStoreUtils.loadKeyStore("../secpassman.jks", "jkspass");
+        manager = new PasswordManager(config.getServerswithPKey());
         manager.init(keyStore, "client", "jkspass");
     }
 
@@ -51,29 +43,16 @@ public class PutTest {
             manager.save_password( domain.getBytes(StandardCharsets.UTF_8),
                     username.getBytes(StandardCharsets.UTF_8),
                     password.getBytes(StandardCharsets.UTF_8));
-        } catch (InvalidKeyException e) {
-            e.printStackTrace();
-        } catch (IOException e) {
-            e.printStackTrace();
-        } catch (SignatureException e) {
-            e.printStackTrace();
-        } catch (ClassNotFoundException e) {
+        } catch (IOException | InvalidKeyException | SignatureException | ClassNotFoundException e) {
             e.printStackTrace();
         }
-
         String wrong = "wrongPassword";
 
         byte[] passwordRetrieved = wrong.getBytes();
         try {
             passwordRetrieved = manager.retrieve_password(domain.getBytes(StandardCharsets.UTF_8),
                     username.getBytes(StandardCharsets.UTF_8));
-        } catch (IOException e) {
-            e.printStackTrace();
-        } catch (InvalidKeyException e) {
-            e.printStackTrace();
-        } catch (SignatureException e) {
-            e.printStackTrace();
-        } catch (ClassNotFoundException e) {
+        } catch (IOException | InvalidKeyException | SignatureException | ClassNotFoundException e) {
             e.printStackTrace();
         }
 
