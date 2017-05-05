@@ -58,42 +58,4 @@ public class PutTest {
         String password2 = new String(passwordRetrieved);
         Assert.assertEquals(password, password2);
     }
-
-    @Test
-    public void noAuthKeyTest() throws IOException, KeyStoreException, UnrecoverableKeyException, InvalidKeyException, NoSuchAlgorithmException {
-        KeyPair client2 = KeyStoreUtils.loadKeyPair(KeyStoreUtils.loadKeyStore("xpto.jks","passxpto"),"client","passxpto");
-        String domain = "tecnico.ulisboa.pt";
-        String username = "client5";
-        String password = "password";
-
-        PasswordRecord newRecord = new PasswordRecord(domain.getBytes(StandardCharsets.UTF_8),
-                username.getBytes(StandardCharsets.UTF_8),
-                password.getBytes(StandardCharsets.UTF_8));
-        RsaSealedObject<PasswordRecord> sealedRecord;
-
-        try {
-            sealedRecord = new RsaSealedObject<>(newRecord, keyPair.getPublic());
-        } catch (InvalidKeyException | IOException e) {
-            throw new RuntimeException("Failed to encrypt password record", e);
-        }
-
-        final PutMessage message = new PutMessage(keyPair.getPublic(),
-                manager.getHmac(domain.getBytes(StandardCharsets.UTF_8), "domain"),
-                manager.getHmac(username.getBytes(StandardCharsets.UTF_8), "username"),
-                SerializationUtils.serialize(sealedRecord));
-
-        try {
-
-            message.timestamp = manager.getTimestamp(message.uuid);
-            broadcaster.broadcastMessage(message.sign(client2.getPrivate()));
-            HttpResponse response;
-
-            response = Unirest.post(String.format("http://%s:%d/secpassman", "localhost", 4567))
-                    .body(SerializationUtils.serialize(message))
-                    .asString();
-        } catch (ClassNotFoundException | SignatureException | UnirestException e) {
-
-        }
-    }
-
 }
