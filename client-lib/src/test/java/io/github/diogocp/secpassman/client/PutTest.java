@@ -8,13 +8,8 @@ import io.github.diogocp.secpassman.common.KeyStoreUtils;
 import io.github.diogocp.secpassman.common.messages.PutMessage;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
-import java.security.InvalidKeyException;
-import java.security.KeyPair;
-import java.security.KeyStore;
-import java.security.KeyStoreException;
-import java.security.NoSuchAlgorithmException;
-import java.security.SignatureException;
-import java.security.UnrecoverableKeyException;
+import java.security.*;
+
 import org.apache.commons.lang3.SerializationUtils;
 import org.junit.Test;
 import org.junit.Assert;
@@ -26,12 +21,15 @@ public class PutTest {
     private PasswordManager manager;
     private Config config;
     private KeyStore keyStore;
+    private Broadcaster broadcaster;
 
-    public PutTest() throws KeyStoreException, IOException, InvalidKeyException {
+    public PutTest() throws KeyStoreException, IOException, InvalidKeyException, UnrecoverableKeyException, NoSuchAlgorithmException {
         config = new Config("config.properties");
         keyStore = KeyStoreUtils.loadKeyStore("secpassman.jks", "jkspass");
         manager = new PasswordManager(config.getServerswithPKey());
         manager.init(keyStore, "client", "jkspass");
+        broadcaster = new Broadcaster(config.getServerswithPKey());
+        keyPair = KeyStoreUtils.loadKeyPair(keyStore,"client","jkspass");
         manager.register_user();
     }
 
@@ -61,12 +59,12 @@ public class PutTest {
         Assert.assertEquals(password, password2);
     }
 
-   /* @Test
-    public void noAuthKeyTest() throws IOException{
+    @Test
+    public void noAuthKeyTest() throws IOException, KeyStoreException {
+        KeyPair client2 = KeyStoreUtils.loadKeyPair(KeyStoreUtils.loadKeyStore("xpto.jks","passxpto"),);
         String domain = "tecnico.ulisboa.pt";
         String username = "client5";
         String password = "password";
-        HttpClient httpClient = new HttpClient("localhost", 4567);
 
         PasswordRecord newRecord = new PasswordRecord(domain.getBytes(StandardCharsets.UTF_8),
                 username.getBytes(StandardCharsets.UTF_8),
@@ -84,6 +82,8 @@ public class PutTest {
                 manager.getHmac(username.getBytes(StandardCharsets.UTF_8), "username"),
                 SerializationUtils.serialize(sealedRecord));
 
+        message.timestamp = manager.getTimestamp(message.uuid);
+        broadcaster.broadcastMessage(new SignedObject(message.sign());
         HttpResponse response;
         try {
             response = Unirest.post(String.format("http://%s:%d/secpassman", "localhost", 4567))
@@ -93,5 +93,5 @@ public class PutTest {
 
         }
     }
-*/
+
 }
